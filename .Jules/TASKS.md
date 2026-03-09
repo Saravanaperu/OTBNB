@@ -2,13 +2,6 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
-| ARCH-001 | Pending | High | Implement SmartAPI login & TOTP generation (`backend/bot/session_manager.py`). | Integrator | None |
-| ARCH-002 | Pending | High | Set up the WebSocket ticker for live market data (`backend/bot/feed_manager.py`). | Architect | ARCH-001 |
-| ARCH-003 | Pending | High | Implement Instrument Registry to pull active strike details (`backend/bot/instrument_registry.py`). | Architect | ARCH-001 |
-| ARCH-004 | Pending | High | Implement Option Chain tracking (`backend/bot/option_chain_manager.py`). | Developer | ARCH-002, ARCH-003 |
-| ARCH-005 | Pending | High | Implement Greeks engine (`backend/bot/greeks_engine.py`) with `py_vollib`. | Developer | None |
-| ARCH-006 | Pending | High | Implement the `RiskManager` module (`backend/bot/risk_manager.py`). | Architect | None |
-| ARCH-007 | Pending | High | Implement the `PositionManager` and `PortfolioManager` to keep track of P&L. | Developer | ARCH-006 |
 | DEV-001 | Pending | Medium | Build the Base Strategy class (`backend/strategies/base_strategy.py`). | Architect | ARCH-004, ARCH-007 |
 | DEV-002 | Pending | Medium | Implement Momentum Breakout Strategy (`backend/strategies/momentum_breakout.py`). | Developer | DEV-001 |
 | DEV-003 | Pending | Medium | Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`). | Developer | DEV-001 |
@@ -36,4 +29,10 @@
 
 # Archive
 
-*No archived tasks yet.*
+| ARCH-001 | Completed | High | Implement SmartAPI login & TOTP generation (`backend/bot/session_manager.py`). | Integrator | None |
+| ARCH-002 | Completed | High | Set up the WebSocket ticker for live market data (`backend/bot/feed_manager.py`). | Architect | ARCH-001 |
+| ARCH-003 | Completed | High | Implement Instrument Registry to pull active strike details (`backend/bot/instrument_registry.py`). | Architect | ARCH-001 |
+| ARCH-004 | Completed | High | Implement Option Chain tracking (`backend/bot/option_chain_manager.py`). | Developer | ARCH-002, ARCH-003 |
+| ARCH-005 | Completed | High | Implement Greeks engine (`backend/bot/greeks_engine.py`) with `py_vollib`. | Developer | None |
+| ARCH-006 | Completed | High | Implement the `RiskManager` module (`backend/bot/risk_manager.py`). | Architect | None |
+| ARCH-007 | Completed | High | Implement the `PositionManager` and `PortfolioManager` to keep track of P&L. | Developer | ARCH-006 |
