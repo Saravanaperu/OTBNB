@@ -1,13 +1,14 @@
 from typing import Optional
 from backend.bot.models import Signal, Position, MarketSnapshot, ExitSignal
 from backend.strategies.base_strategy import BaseStrategy
+from backend.bot.instrument_registry import InstrumentRegistry
 
 class OIBuildupStrategy(BaseStrategy):
     name = "OI Buildup"
     instruments = ['NIFTY', 'BANKNIFTY']
     enabled = True
 
-    def generate_signal(self, snapshot: MarketSnapshot) -> Optional[Signal]:
+    def generate_signal(self, snapshot: MarketSnapshot, registry: InstrumentRegistry) -> Optional[Signal]:
         # Entry Conditions from doc1.txt for Strategy 2: OI Buildup
         # Long Buildup: Price Rising, OI Rising -> Buy CE
         # Short Covering: Price Rising, OI Falling -> Buy CE
@@ -27,40 +28,49 @@ class OIBuildupStrategy(BaseStrategy):
         oi_falling = snapshot.open_interest < snapshot.previous_open_interest
 
         signal_side = None
+        direction = None
 
         if price_rising and oi_rising:
             # Long Buildup
             signal_side = 'BUY_CE'
+            direction = 'CE'
         elif price_rising and oi_falling:
             # Short Covering
             signal_side = 'BUY_CE'
+            direction = 'CE'
         elif price_falling and oi_rising:
             # Short Buildup
             signal_side = 'BUY_PE'
+            direction = 'PE'
         elif price_falling and oi_falling:
             # Long Unwinding
             signal_side = 'BUY_PE'
+            direction = 'PE'
 
         if signal_side:
             # VWAP check as confirmation
             if signal_side == 'BUY_CE' and snapshot.close > snapshot.vwap:
-                return Signal(
-                    symbol=snapshot.symbol,
-                    token=snapshot.token,
-                    side=signal_side,
-                    entry_price=snapshot.close,
-                    stop_loss=snapshot.close * 0.9, # Placeholder stop loss
-                    target=snapshot.close * 1.2 # Placeholder target
-                )
+                token = self.select_strike(snapshot.symbol, snapshot.close, direction, registry)
+                if token:
+                    return Signal(
+                        symbol=snapshot.symbol,
+                        token=token,
+                        side=signal_side,
+                        entry_price=snapshot.close,
+                        stop_loss=snapshot.close * 0.9, # Placeholder stop loss
+                        target=snapshot.close * 1.2 # Placeholder target
+                    )
             elif signal_side == 'BUY_PE' and snapshot.close < snapshot.vwap:
-                return Signal(
-                    symbol=snapshot.symbol,
-                    token=snapshot.token,
-                    side=signal_side,
-                    entry_price=snapshot.close,
-                    stop_loss=snapshot.close * 0.9, # Placeholder stop loss
-                    target=snapshot.close * 1.2 # Placeholder target
-                )
+                token = self.select_strike(snapshot.symbol, snapshot.close, direction, registry)
+                if token:
+                    return Signal(
+                        symbol=snapshot.symbol,
+                        token=token,
+                        side=signal_side,
+                        entry_price=snapshot.close,
+                        stop_loss=snapshot.close * 0.9, # Placeholder stop loss
+                        target=snapshot.close * 1.2 # Placeholder target
+                    )
 
         return None
 

@@ -18,11 +18,11 @@
 - [x] Implement the `PositionManager` and `PortfolioManager` to keep track of P&L (`backend/bot/position_manager.py`, `backend/bot/portfolio_manager.py`).
 
 ## Phase 3: Trading Strategies Implementation
-- [ ] Build the Base Strategy class (`backend/strategies/base_strategy.py`).
-- [ ] Implement Momentum Breakout Strategy (`backend/strategies/momentum_breakout.py`).
-- [ ] Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`).
-- [ ] Implement PCR Reversal Strategy (`backend/strategies/pcr_reversal.py`).
-- [ ] Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`).
+- [x] Build the Base Strategy class (`backend/strategies/base_strategy.py`).
+- [x] Implement Momentum Breakout Strategy (`backend/strategies/momentum_breakout.py`).
+- [x] Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`).
+- [x] Implement PCR Reversal Strategy (`backend/strategies/pcr_reversal.py`).
+- [x] Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`).
 
 ## Phase 4: API & Alerting
 - [x] Setup FastAPI main application and routing (`backend/main.py`).
