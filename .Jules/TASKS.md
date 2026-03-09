@@ -36,3 +36,4 @@
 | ARCH-005 | Completed | High | Implement Greeks engine (`backend/bot/greeks_engine.py`) with `py_vollib`. | Developer | None |
 | ARCH-006 | Completed | High | Implement the `RiskManager` module (`backend/bot/risk_manager.py`). | Architect | None |
 | ARCH-007 | Completed | High | Implement the `PositionManager` and `PortfolioManager` to keep track of P&L. | Developer | ARCH-006 |
+| ARCH-008 | Completed | High | Implement `settings.yaml` and `.env` parsing with `pydantic-settings` (`backend/config/settings.py`). | Architect | None |

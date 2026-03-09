@@ -1,0 +1,23 @@
+market:
+  open_time: '09:15'
+  bot_start_time: '09:20'
+  no_new_entry_after: '15:20'
+  square_off_time: '15:20'
+  eod_report_time: '15:35'
+  timezone: 'Asia/Kolkata'
+
+instruments:
+  nifty:
+    lot_size: 50
+    strike_interval: 50
+    weekly_expiry_day: 'Thursday'
+    atm_strikes_range: 5
+    min_premium: 30
+    max_premium: 300
+  banknifty:
+    lot_size: 15
+    strike_interval: 100
+    weekly_expiry_day: 'Wednesday'
+    atm_strikes_range: 5
+    min_premium: 50
+    max_premium: 600

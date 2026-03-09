@@ -8,14 +8,14 @@
 - [x] Create project documentation (README.md, AGENTS.md, TASKS_AND_ROADMAP.md)
 
 ## Phase 2: Backend Core Trading Engine Setup
-- [ ] Implement `settings.yaml` and `.env` parsing with `pydantic-settings` (`backend/config/settings.py`).
-- [ ] Implement SmartAPI login & TOTP generation (`backend/bot/session_manager.py`).
-- [ ] Set up the WebSocket ticker for live market data (`backend/bot/feed_manager.py`).
-- [ ] Implement Instrument Registry to pull active strike details (`backend/bot/instrument_registry.py`).
-- [ ] Implement Option Chain tracking (`backend/bot/option_chain_manager.py`).
-- [ ] Implement Greeks engine (`backend/bot/greeks_engine.py`) with `py_vollib`.
-- [ ] Implement the `RiskManager` module (`backend/bot/risk_manager.py`).
-- [ ] Implement the `PositionManager` and `PortfolioManager` to keep track of P&L (`backend/bot/position_manager.py`, `backend/bot/portfolio_manager.py`).
+- [x] Implement `settings.yaml` and `.env` parsing with `pydantic-settings` (`backend/config/settings.py`).
+- [x] Implement SmartAPI login & TOTP generation (`backend/bot/session_manager.py`).
+- [x] Set up the WebSocket ticker for live market data (`backend/bot/feed_manager.py`).
+- [x] Implement Instrument Registry to pull active strike details (`backend/bot/instrument_registry.py`).
+- [x] Implement Option Chain tracking (`backend/bot/option_chain_manager.py`).
+- [x] Implement Greeks engine (`backend/bot/greeks_engine.py`) with `py_vollib`.
+- [x] Implement the `RiskManager` module (`backend/bot/risk_manager.py`).
+- [x] Implement the `PositionManager` and `PortfolioManager` to keep track of P&L (`backend/bot/position_manager.py`, `backend/bot/portfolio_manager.py`).
 
 ## Phase 3: Trading Strategies Implementation
 - [ ] Build the Base Strategy class (`backend/strategies/base_strategy.py`).

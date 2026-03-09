@@ -1,7 +1,7 @@
 import os
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
 from pydantic import Field
-from typing import List
+from typing import List, Tuple, Type
 
 class MarketSettings(BaseSettings):
     open_time: str = '09:15'
@@ -52,6 +52,29 @@ class AppSettings(BaseSettings):
     market: MarketSettings = MarketSettings()
     instruments: InstrumentsConfig = InstrumentsConfig()
 
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', extra='ignore')
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        yaml_file=os.path.join(os.path.dirname(__file__), 'settings.yaml'),
+        yaml_file_encoding='utf-8',
+        extra='ignore'
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            YamlConfigSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
 settings = AppSettings()
