@@ -25,9 +25,9 @@
 - [ ] Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`).
 
 ## Phase 4: API & Alerting
-- [ ] Setup FastAPI main application and routing (`backend/main.py`).
-- [ ] Build REST API endpoints for `/status`, `/positions`, `/pnl`, `/trades`, etc. (`backend/api/routes/`).
-- [ ] Build WebSocket server to emit events (`backend/api/websocket.py`).
+- [x] Setup FastAPI main application and routing (`backend/main.py`).
+- [x] Build REST API endpoints for `/status`, `/positions`, `/pnl`, `/trades`, etc. (`backend/api/routes/`).
+- [x] Build WebSocket server to emit events (`backend/api/websocket.py`).
 - [ ] Set up Email Service with HTML templating (`backend/alerts/email_service.py`).
 - [ ] Use SQLite to persist trades history (`backend/storage/database.py`).
 

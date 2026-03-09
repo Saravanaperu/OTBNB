@@ -6,6 +6,8 @@ import uvicorn
 
 from backend.config.settings import settings
 from backend.bot.session_manager import SessionManager
+from backend.api.routes import api_router
+from backend.api.websocket import router as ws_router
 
 logger = structlog.get_logger()
 
@@ -30,6 +32,12 @@ bot_state = {
     "session_manager": None
 }
 
+def get_bot_state():
+    return bot_state
+
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(ws_router, prefix="/ws")
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting up FastAPI application...")
@@ -44,10 +52,6 @@ async def shutdown_event():
     logger.info("Shutting down FastAPI application...")
     if bot_state["session_manager"]:
         bot_state["session_manager"].logout()
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "bot_status": bot_state["status"]}
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host=settings.backend_host, port=settings.backend_port, reload=True)
