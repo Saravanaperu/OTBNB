@@ -49,6 +49,9 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Automerge PR
         uses: pascalgn/automerge-action@v0.16.4
