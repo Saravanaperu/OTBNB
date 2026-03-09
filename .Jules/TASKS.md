@@ -30,6 +30,9 @@
 | QA-001 | Pending | High | Write basic unit tests for the core logic (Greeks, Risk, Option Chain). | QA Engineer | ARCH-004, ARCH-005, ARCH-006 |
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
+| TSK-001 | Completed | High | Implement CI/CD pipeline with GitHub Actions | Jules | None |
+| TSK-002 | Completed | High | Add Automerge step to CI/CD | Jules | TSK-001 |
+| TSK-003 | Completed | High | Add relevant tests to be run in CI/CD | Jules | TSK-001 |
 
 # Archive
 
