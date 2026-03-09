@@ -48,11 +48,12 @@ jobs:
   automerge:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
     if: github.event_name == 'pull_request'
     steps:
       - name: Automerge PR
-        uses: pascalgn/automerge-action@v0.16.4
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          MERGE_LABELS: ""
-          MERGE_METHOD: "squash"
+        uses: fastify/github-action-merge-dependabot@v3.10.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
