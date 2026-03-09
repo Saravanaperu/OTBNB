@@ -18,3 +18,9 @@ class Signal(BaseModel):
     entry_price: float
     stop_loss: float
     target: float
+
+class MarketSnapshot(BaseModel):
+    pass
+
+class ExitSignal(BaseModel):
+    pass
