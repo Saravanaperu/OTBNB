@@ -6,3 +6,4 @@ build/
 *.db
 __pycache__/
 .venv/
+venv/

@@ -20,7 +20,26 @@ class Signal(BaseModel):
     target: float
 
 class MarketSnapshot(BaseModel):
-    pass
+    timestamp: float = 0.0
+    symbol: str = ""
+    token: str = ""
+    open: float = 0.0
+    high: float = 0.0
+    low: float = 0.0
+    close: float = 0.0
+    volume: float = 0.0
+    vwap: float = 0.0
+    rsi: float = 0.0
+    supertrend_direction: str = ""  # 'UP' or 'DOWN'
+    open_interest: float = 0.0
+    pcr: float = 0.0
+    morning_high: float = 0.0
+    morning_low: float = 0.0
+    average_volume: float = 0.0
+    previous_close: float = 0.0
+    previous_open_interest: float = 0.0
 
 class ExitSignal(BaseModel):
-    pass
+    symbol: str
+    token: str
+    reason: str
