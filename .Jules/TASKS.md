@@ -7,9 +7,6 @@
 | DEV-003 | Completed | Medium | Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`). | Developer | DEV-001 |
 | DEV-004 | Completed | Medium | Implement PCR Reversal Strategy (`backend/strategies/pcr_reversal.py`). | Developer | DEV-001 |
 | DEV-005 | Completed | Medium | Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`). | Developer | DEV-002, DEV-003, DEV-004 |
-| DEV-006 | Pending | Medium | Setup FastAPI main application and routing (`backend/main.py`). | Architect | None |
-| DEV-007 | Pending | Medium | Build REST API endpoints for `/status`, `/positions`, `/pnl`, `/trades`, etc. | Developer | DEV-006 |
-| DEV-008 | Pending | Medium | Build WebSocket server to emit events (`backend/api/websocket.py`). | Architect | DEV-006 |
 | INT-001 | Pending | Low | Set up Email Service with HTML templating (`backend/alerts/email_service.py`). | Integrator | None |
 | DEV-009 | Pending | Medium | Use SQLite to persist trades history (`backend/storage/database.py`). | Developer | None |
 | UX-001 | Pending | Low | Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`). | UIMaster | None |
@@ -37,3 +34,6 @@
 | ARCH-006 | Completed | High | Implement the `RiskManager` module (`backend/bot/risk_manager.py`). | Architect | None |
 | ARCH-007 | Completed | High | Implement the `PositionManager` and `PortfolioManager` to keep track of P&L. | Developer | ARCH-006 |
 | ARCH-008 | Completed | High | Implement `settings.yaml` and `.env` parsing with `pydantic-settings` (`backend/config/settings.py`). | Architect | None |
+| DEV-006 | Completed | Medium | Setup FastAPI main application and routing (`backend/main.py`). | Architect | None |
+| DEV-007 | Completed | Medium | Build REST API endpoints for `/status`, `/positions`, `/pnl`, `/trades`, etc. | Developer | DEV-006 |
+| DEV-008 | Completed | Medium | Build WebSocket server to emit events (`backend/api/websocket.py`). | Architect | DEV-006 |
