@@ -11,7 +11,18 @@ class OptionChainManager:
 
     def update(self, instrument: str, tick: Dict[str, Any]):
         """Updates the option chain with a new tick."""
-        pass
+        token = tick.get('token')
+        if not token:
+            return
+
+        if instrument not in self.chain_state:
+            self.chain_state[instrument] = {}
+
+        if token not in self.chain_state[instrument]:
+            self.chain_state[instrument][token] = {}
+
+        # Update tick data
+        self.chain_state[instrument][token].update(tick)
 
     def get_snapshot(self, instrument: str) -> Dict[str, Any]:
         """Returns the current state of the option chain."""
