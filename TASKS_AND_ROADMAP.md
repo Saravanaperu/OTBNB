@@ -1,0 +1,47 @@
+# Options Buying Bot - Tasks & Roadmap
+
+## Phase 1: Project Initialization & Structure (Completed)
+- [x] Read architecture documents
+- [x] Extract file structure
+- [x] Create backend file structure
+- [x] Create frontend file structure
+- [x] Create project documentation (README.md, AGENTS.md, TASKS_AND_ROADMAP.md)
+
+## Phase 2: Backend Core Trading Engine Setup
+- [ ] Implement `settings.yaml` and `.env` parsing with `pydantic-settings` (`backend/config/settings.py`).
+- [ ] Implement SmartAPI login & TOTP generation (`backend/bot/session_manager.py`).
+- [ ] Set up the WebSocket ticker for live market data (`backend/bot/feed_manager.py`).
+- [ ] Implement Instrument Registry to pull active strike details (`backend/bot/instrument_registry.py`).
+- [ ] Implement Option Chain tracking (`backend/bot/option_chain_manager.py`).
+- [ ] Implement Greeks engine (`backend/bot/greeks_engine.py`) with `py_vollib`.
+- [ ] Implement the `RiskManager` module (`backend/bot/risk_manager.py`).
+- [ ] Implement the `PositionManager` and `PortfolioManager` to keep track of P&L (`backend/bot/position_manager.py`, `backend/bot/portfolio_manager.py`).
+
+## Phase 3: Trading Strategies Implementation
+- [ ] Build the Base Strategy class (`backend/strategies/base_strategy.py`).
+- [ ] Implement Momentum Breakout Strategy (`backend/strategies/momentum_breakout.py`).
+- [ ] Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`).
+- [ ] Implement PCR Reversal Strategy (`backend/strategies/pcr_reversal.py`).
+- [ ] Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`).
+
+## Phase 4: API & Alerting
+- [ ] Setup FastAPI main application and routing (`backend/main.py`).
+- [ ] Build REST API endpoints for `/status`, `/positions`, `/pnl`, `/trades`, etc. (`backend/api/routes/`).
+- [ ] Build WebSocket server to emit events (`backend/api/websocket.py`).
+- [ ] Set up Email Service with HTML templating (`backend/alerts/email_service.py`).
+- [ ] Use SQLite to persist trades history (`backend/storage/database.py`).
+
+## Phase 5: Frontend Dashboard
+- [ ] Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`).
+- [ ] Implement layout components (TopBar, SideNav, SignalTicker).
+- [ ] Configure `zustand` stores for bot status and market data.
+- [ ] Implement WebSocket custom hook to ingest live ticks and position updates.
+- [ ] Build the live monitoring UI: `PositionsTable`, `RiskGauge`, `PnLCurve` components.
+- [ ] Build the `TradeHistory` view pulling from the backend.
+- [ ] Finalize configuration panels to adjust bot settings from UI.
+
+## Phase 6: System Integration & Testing
+- [ ] Link frontend to backend endpoints.
+- [ ] Write basic unit tests for the core logic (Greeks, Risk, Option Chain).
+- [ ] Run bot with simulated ticks to verify system stability and order logic without money.
+- [ ] Document final setup instructions.

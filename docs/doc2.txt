@@ -1,0 +1,2430 @@
+Doc 2:
+OPTIONS BOT v2.0  ·  React Frontend  ·  FastAPI Backend  ·  Email Alerts  ·  Personal Use
+
+
+
+
+
+
+
+OPTIONS BUYING BOT
+
+NIFTY  ×  BANKNIFTY
+
+AngelOne SmartAPI  ·  FastAPI Backend  ·  React Dashboard  ·  Email Alerts
+
+COMPLETE SYSTEM ARCHITECTURE — PERSONAL TRADING BOT
+
+
+
+
+
+
+
+
+
+Architecture Version 2.0   ·   Personal Use
+
+
+
+
+1. Overview & Architecture Decisions
+
+This document defines the complete, revised architecture for a personal-use algorithmic options buying bot trading NIFTY 50 and BANKNIFTY simultaneously on NSE through AngelOne SmartAPI. This version reflects three major architectural decisions from the ground up:
+
+
+
+#
+
+Decision
+
+Old Approach
+
+New Approach
+
+1
+
+Frontend
+
+Streamlit (monolithic, Python-only)
+
+React SPA + FastAPI — fully decoupled, production-grade UI
+
+2
+
+Alerting
+
+Telegram Bot API
+
+SMTP Email with rich HTML templates
+
+3
+
+Usage Model
+
+General-purpose, multi-user
+
+Single-user personal bot — simplified auth, local-first
+
+
+
+1.1 High-Level System Topology
+
+The system is composed of three independently running processes that communicate over a local network:
+
+
+
+▸ BACKEND PROCESS (FastAPI + Bot Engine): The Python trading engine runs continuously during market hours. It handles AngelOne SmartAPI communication, all trading logic, and exposes a REST + WebSocket API on localhost:8000.
+
+
+
+▸ FRONTEND PROCESS (React + Vite): A Node.js dev server (or Nginx-served build) runs the React dashboard on localhost:5173. It communicates exclusively with the FastAPI backend — never directly with AngelOne.
+
+
+
+▸ EMAIL SERVICE (SMTP/Gmail): The backend sends outbound emails via SMTP. No separate process needed — emails are sent from the bot engine itself using Python's smtplib or aiosmtplib.
+
+
+
+1.2 Architecture Diagram
+
+┌─────────────────────────────────────────────────────────────────────┐
+
+│                     YOUR PERSONAL MACHINE / VPS                    │
+
+│                                                                     │
+
+│   ┌───────────────────────────────────────────────────────────┐   │
+
+│   │           BACKEND  (Python / FastAPI)  :8000              │   │
+
+│   │                                                           │   │
+
+│   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐  │   │
+
+│   │  │Bot Engine│  │ REST API │  │WebSocket │  │  Email  │  │   │
+
+│   │  │(Signals, │  │/api/v1/* │  │/ws/live  │  │ Service │  │   │
+
+│   │  │Risk, Exec│  │          │  │          │  │(SMTP)   │  │   │
+
+│   │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬────┘  │   │
+
+│   │       │             │              │              │       │   │
+
+│   └───────┼─────────────┼──────────────┼──────────────┼───────┘   │
+
+│           │             │              │              │            │
+
+│           ▼             ▼              ▼              ▼            │
+
+│    AngelOne         ┌──────────────────────┐     Gmail SMTP        │
+
+│    SmartAPI         │  FRONTEND (React)    │     (outbound)        │
+
+│    WebSocket/REST   │  localhost:5173       │                       │
+
+│                     │  Dashboard / Charts  │                       │
+
+│                     └──────────────────────┘                       │
+
+└─────────────────────────────────────────────────────────────────────┘
+
+
+
+
+2. Backend Architecture — FastAPI + Bot Engine
+
+The backend is a single Python application that runs two concurrent responsibilities: the trading bot engine (all market logic) and a FastAPI web server (REST + WebSocket API for the frontend). Both run within the same asyncio event loop — no inter-process communication needed.
+
+
+
+2.1 Process Architecture
+
+# main.py — single entry point
+
+async def main():
+
+    app   = create_fastapi_app()   # REST + WebSocket server
+
+    bot   = BotEngine()            # Trading logic
+
+    email = EmailService()         # Alert dispatcher
+
+
+
+    # Both run concurrently in the same event loop
+
+    await asyncio.gather(
+
+        uvicorn.serve(app, host='0.0.0.0', port=8000),
+
+        bot.run(),
+
+        email.run_queue_worker(),
+
+    )
+
+
+
+2.2 FastAPI Application Structure
+
+Item
+
+Description
+
+Framework
+
+FastAPI — async-native, auto OpenAPI docs, built-in WebSocket support
+
+ASGI Server
+
+Uvicorn — production-grade ASGI server, compatible with asyncio
+
+API Base URL
+
+http://localhost:8000/api/v1
+
+WebSocket URL
+
+ws://localhost:8000/ws/live
+
+CORS
+
+Configured to allow only localhost:5173 (React dev server)
+
+Auth (Personal)
+
+Single static Bearer token in .env — no user database, no OAuth
+
+Docs
+
+Auto-generated at http://localhost:8000/docs (Swagger UI)
+
+Startup
+
+lifespan() event initialises bot engine, DB, email service, AngelOne session
+
+
+
+2.3 REST API — Complete Endpoint Specification
+
+
+
+2.3.1 Status & Health
+
+Method + Endpoint
+
+Response
+
+Description
+
+GET  /api/v1/health
+
+{ status, uptime, market_open, last_tick_age_ms }
+
+Bot health check — used by frontend header status badge
+
+GET  /api/v1/status
+
+{ bot_running, strategy_paused, vix, iv_rank_nifty, iv_rank_bnf, session_valid }
+
+Full bot status snapshot
+
+POST /api/v1/bot/pause
+
+{ success, message }
+
+Pause new signal generation (keep monitoring active)
+
+POST /api/v1/bot/resume
+
+{ success, message }
+
+Resume signal generation
+
+POST /api/v1/bot/emergency_exit
+
+{ success, orders_placed }
+
+Square off ALL open positions immediately
+
+
+
+2.3.2 Positions
+
+Method + Endpoint
+
+Response
+
+Description
+
+GET  /api/v1/positions
+
+List[Position]
+
+All currently open positions with live P&L
+
+GET  /api/v1/positions/{id}
+
+Position
+
+Single position detail including full Greeks
+
+POST /api/v1/positions/{id}/exit
+
+{ success, order_id }
+
+Manually trigger exit for a specific position
+
+GET  /api/v1/positions/history
+
+List[ClosedPosition]
+
+All closed positions for today with exit reason
+
+
+
+2.3.3 Trades & P&L
+
+Method + Endpoint
+
+Response
+
+Description
+
+GET  /api/v1/pnl/today
+
+DailyPnL
+
+Today's realised + unrealised P&L, win rate, trade count
+
+GET  /api/v1/pnl/history?days=30
+
+List[DailyPnL]
+
+Historical daily P&L for charting
+
+GET  /api/v1/trades?date=YYYY-MM-DD
+
+List[Trade]
+
+Full trade log for a given date
+
+GET  /api/v1/trades/stats
+
+PerformanceStats
+
+Win rate, profit factor, avg R:R, Sharpe (rolling 30d)
+
+
+
+2.3.4 Market Data
+
+Method + Endpoint
+
+Response
+
+Description
+
+GET  /api/v1/chain/nifty
+
+OptionChain
+
+Live NIFTY option chain: all strikes, LTP, OI, IV, Greeks
+
+GET  /api/v1/chain/banknifty
+
+OptionChain
+
+Live BANKNIFTY option chain
+
+GET  /api/v1/vix
+
+{ vix, change_pct, iv_rank_nifty, iv_rank_bnf }
+
+India VIX and IV Rank for both instruments
+
+GET  /api/v1/spot
+
+{ nifty, banknifty, timestamp }
+
+Current spot prices for both indices
+
+GET  /api/v1/risk/budget
+
+RiskBudget
+
+Daily loss used, remaining budget, open position count
+
+
+
+2.3.5 Configuration
+
+Method + Endpoint
+
+Response
+
+Description
+
+GET  /api/v1/config/risk
+
+RiskConfig
+
+Current risk parameters
+
+PUT  /api/v1/config/risk
+
+RiskConfig
+
+Update risk parameters at runtime (hot reload)
+
+GET  /api/v1/config/strategies
+
+List[StrategyConfig]
+
+Strategy list with enabled/disabled status
+
+PUT  /api/v1/config/strategies/{name}
+
+StrategyConfig
+
+Enable or disable a specific strategy at runtime
+
+
+
+2.4 WebSocket — Real-Time Event Stream
+
+The frontend maintains a single persistent WebSocket connection to /ws/live. The backend pushes events as they happen — no polling required. This powers all live-updating UI components.
+
+
+
+2.4.1 Connection & Authentication
+
+# Frontend connects with Bearer token
+
+ws://localhost:8000/ws/live?token=YOUR_STATIC_TOKEN
+
+
+
+# Backend validates token on connect
+
+@app.websocket('/ws/live')
+
+async def ws_endpoint(websocket: WebSocket, token: str = Query(...)):
+
+    if token != settings.DASHBOARD_TOKEN:
+
+        await websocket.close(code=1008)  # Policy violation
+
+        return
+
+    await ws_manager.connect(websocket)
+
+
+
+2.4.2 Event Types — Complete Specification
+
+Event Type
+
+Trigger
+
+Payload Fields
+
+UI Consumer
+
+TICK_UPDATE
+
+Every 500ms
+
+instrument, spot, atm_strike, timestamp
+
+Spot price header bar
+
+POSITION_UPDATE
+
+Every 500ms per open position
+
+position_id, ltp, unrealised_pnl, pnl_pct, peak, trailing_sl_active
+
+Positions table, P&L gauge
+
+TRADE_ENTRY
+
+Order filled
+
+full Position object + signal rationale
+
+Notification toast, positions table
+
+TRADE_EXIT
+
+Position closed
+
+position_id, exit_price, exit_reason, realised_pnl
+
+Notification, P&L update
+
+SIGNAL_DETECTED
+
+Strategy emits signal
+
+instrument, direction, strategy, confidence, rationale
+
+Signal feed panel
+
+SIGNAL_REJECTED
+
+Risk check failed
+
+signal, rejection_reason
+
+Signal feed panel
+
+RISK_BUDGET_UPDATE
+
+After each trade
+
+daily_pnl, nifty_pnl, bnf_pnl, budget_used_pct
+
+Risk gauges
+
+CHAIN_UPDATE
+
+Every 10 seconds
+
+instrument, top 15 strikes with ltp/oi/iv/delta
+
+Option chain table
+
+VIX_UPDATE
+
+Every 30 seconds
+
+vix, iv_rank_nifty, iv_rank_bnf
+
+VIX panel
+
+BOT_STATUS
+
+On state change
+
+running, paused, halt_reason
+
+Status badge
+
+ORDER_STATUS
+
+Order state transition
+
+order_id, status, fill_price, message
+
+Order log panel
+
+ALERT
+
+Any alert event
+
+level, title, message, timestamp
+
+Alert banner
+
+
+
+2.4.3 WebSocket Manager
+
+class WSManager:
+
+    connections: List[WebSocket] = []
+
+
+
+    async def connect(self, ws: WebSocket):
+
+        await ws.accept()
+
+        self.connections.append(ws)
+
+
+
+    async def broadcast(self, event_type: str, payload: dict):
+
+        msg = json.dumps({ 'event': event_type, 'data': payload,
+
+                           'ts': datetime.now().isoformat() })
+
+        dead = []
+
+        for ws in self.connections:
+
+            try:
+
+                await ws.send_text(msg)
+
+            except:
+
+                dead.append(ws)
+
+        for ws in dead:
+
+            self.connections.remove(ws)
+
+
+
+2.5 Backend File Structure
+
+backend/
+
+├── main.py                     # FastAPI app + asyncio entry point
+
+├── api/
+
+│   ├── routes/
+
+│   │   ├── status.py           # /health, /status, /bot/*
+
+│   │   ├── positions.py        # /positions/*
+
+│   │   ├── pnl.py              # /pnl/*
+
+│   │   ├── trades.py           # /trades/*
+
+│   │   ├── market.py           # /chain/*, /vix, /spot
+
+│   │   └── config.py           # /config/*
+
+│   ├── websocket.py            # /ws/live handler + WSManager
+
+│   └── schemas.py              # Pydantic models for all API types
+
+├── bot/                        # Core trading engine (unchanged from v1)
+
+│   ├── session_manager.py
+
+│   ├── instrument_registry.py
+
+│   ├── feed_manager.py
+
+│   ├── option_chain_manager.py
+
+│   ├── greeks_engine.py
+
+│   ├── risk_manager.py
+
+│   ├── execution_engine.py
+
+│   ├── position_manager.py
+
+│   └── portfolio_manager.py
+
+├── strategies/                 # Strategy modules (unchanged from v1)
+
+├── alerts/
+
+│   ├── email_service.py        # SMTP + HTML template renderer
+
+│   ├── email_templates.py      # Jinja2 HTML email templates
+
+│   └── alert_queue.py          # Async email queue
+
+├── storage/
+
+│   ├── database.py
+
+│   └── repositories.py
+
+├── config/
+
+│   ├── settings.py             # Pydantic BaseSettings
+
+│   ├── risk_config.yaml
+
+│   └── strategies.yaml
+
+└── .env
+
+
+
+
+3. Frontend Architecture — React Dashboard
+
+The frontend is a standalone React single-page application built with Vite. It runs entirely in the browser and communicates with the FastAPI backend over REST (for data fetches) and WebSocket (for real-time updates). It is completely decoupled — the backend has no knowledge of the frontend's existence beyond exposing its API.
+
+
+
+3.1 Technology Stack
+
+Layer
+
+Technology
+
+Rationale
+
+Framework
+
+React 18 + TypeScript
+
+Type-safe, component-driven, large ecosystem
+
+Build Tool
+
+Vite 5
+
+Instant HMR, fast builds, native ESM
+
+Routing
+
+React Router v6
+
+Client-side routing for multi-page dashboard
+
+State Management
+
+Zustand
+
+Lightweight, no boilerplate, perfect for trading data
+
+WebSocket Client
+
+Custom hook (native WebSocket API)
+
+No library needed — direct WebSocket with auto-reconnect
+
+REST Client
+
+TanStack Query (React Query)
+
+Caching, background refresh, loading/error states
+
+Charts
+
+TradingView Lightweight Charts
+
+Professional financial charting library
+
+Gauge / Radial
+
+Recharts
+
+For P&L gauges and win-rate dials
+
+Tables
+
+TanStack Table v8
+
+High-performance virtualised tables for option chains
+
+Styling
+
+Tailwind CSS + shadcn/ui
+
+Utility-first CSS + accessible headless components
+
+Animations
+
+Framer Motion
+
+Smooth transitions for trade notifications, panel slides
+
+Icons
+
+Lucide React
+
+Consistent, clean icon set
+
+Number Formatting
+
+Intl.NumberFormat (native)
+
+Indian number formatting with ₹ symbol
+
+Date/Time
+
+date-fns
+
+Lightweight date formatting in IST timezone
+
+
+
+3.2 Visual Design System
+
+The dashboard uses a refined dark-mode trading terminal aesthetic — high information density, precise typography, and purposeful use of colour to convey trade state at a glance.
+
+
+
+3.2.1 Colour Semantics
+
+Token
+
+Hex Value
+
+Used For
+
+Examples
+
+--bg-base
+
+#0A0E1A
+
+Page background
+
+Full page, main canvas
+
+--bg-surface
+
+#111827
+
+Card/panel backgrounds
+
+Position cards, chain table
+
+--bg-elevated
+
+#1F2937
+
+Interactive elements
+
+Dropdowns, modals, tooltips
+
+--accent-blue
+
+#3B82F6
+
+Primary interactive elements
+
+Buttons, links, active states
+
+--accent-orange
+
+#F97316
+
+Highlights, brand accent
+
+Logo, key metric values
+
+--profit-green
+
+#22C55E
+
+Positive P&L, winning trades
+
+P&L numbers, win indicators
+
+--loss-red
+
+#EF4444
+
+Negative P&L, SL hits
+
+Loss numbers, SL distance
+
+--neutral-gray
+
+#6B7280
+
+Secondary text, disabled
+
+Labels, timestamps
+
+--border
+
+#1E2D45
+
+Subtle element borders
+
+Card borders, dividers
+
+--warning-amber
+
+#F59E0B
+
+Warnings, soft limits
+
+Daily limit gauges
+
+
+
+3.2.2 Typography Scale
+
+Item
+
+Description
+
+Display (Spot Prices)
+
+font: 'JetBrains Mono', 28-36px bold — monospace for numbers that change frequently
+
+Heading (Section titles)
+
+font: 'Inter', 18-22px semibold — clean, readable panel headers
+
+Body (Labels, descriptions)
+
+font: 'Inter', 13-15px regular — comfortable reading weight
+
+Data (Table cells, values)
+
+font: 'JetBrains Mono', 13-14px — monospace ensures columns align
+
+Micro (Timestamps, badges)
+
+font: 'Inter', 11px uppercase tracked — metadata, status labels
+
+
+
+3.3 Dashboard Layout & Pages
+
+
+
+3.3.1 Global Layout
+
+┌─────────────────────────────────────────────────────────────────┐
+
+│  TOP BAR:  ● LIVE  |  NIFTY 22,450 ▲0.3%  BNKFY 48,120 ▼0.1% │
+
+│            VIX 14.2  IV Rank N:28 B:31  |  P&L: +₹4,200 ● 🔔  │
+
+├──────────┬──────────────────────────────────────────────────────┤
+
+│          │                                                      │
+
+│  LEFT    │              MAIN CONTENT AREA                      │
+
+│  SIDE    │                                                      │
+
+│  NAV     │   (Changes based on selected page)                  │
+
+│          │                                                      │
+
+│  • Home  │                                                      │
+
+│  • Chain │                                                      │
+
+│  • Trades│                                                      │
+
+│  • Risk  │                                                      │
+
+│  • Config│                                                      │
+
+│          │                                                      │
+
+├──────────┴──────────────────────────────────────────────────────┤
+
+│  SIGNAL FEED (scrolling ticker at bottom — live signals)        │
+
+└─────────────────────────────────────────────────────────────────┘
+
+
+
+3.3.2 Page 1 — Home (Live Monitor)
+
+The primary page showing everything needed to monitor the bot in real-time. Composed of 6 panels:
+
+
+
+Panel A — Open Positions Table: Each row: instrument badge, strike, CE/PE tag, lots, entry price, current LTP, P&L (₹ and %), P&L bar, SL distance, trailing SL indicator, time held, manual exit button. Rows pulse green/red when P&L crosses thresholds. Sorted by unrealised P&L descending.
+
+Panel B — Intraday P&L Curve: TradingView Lightweight Chart showing cumulative P&L from 09:15 AM to now. Green fill above zero, red fill below. Vertical markers at each trade entry/exit. Daily hard/soft limits shown as horizontal reference lines.
+
+Panel C — Risk Budget Gauges: Three arc gauges: (1) Total daily P&L vs hard limit, (2) NIFTY daily budget, (3) BANKNIFTY daily budget. Colour transitions: green → amber → red as limit approached.
+
+Panel D — India VIX + IV Rank: VIX value with 5-day mini sparkline. IV Rank for NIFTY (gauge 0-100, coloured: green<30, amber 30-50, red>50). Same for BANKNIFTY. Block indicator shown when IV Rank blocks new entries.
+
+Panel E — Live Signal Feed: Chronological list of last 20 signals: timestamp, instrument, direction, strategy name, confidence, outcome (EXECUTED / REJECTED with reason). Auto-scrolling with new signals appearing at top.
+
+Panel F — Today's Stats Bar: Compact horizontal strip: Trades Today, Open Positions, Win Rate, Best Trade, Worst Trade, Capital at Risk.
+
+
+
+3.3.3 Page 2 — Option Chain
+
+A live, full-width option chain table for both NIFTY and BANKNIFTY displayed side-by-side or toggled via tabs:
+
+
+
+Table Layout: Classic option chain layout — CE data on the left columns, Strike in the centre, PE data on the right columns.
+
+CE Columns: OI, OI Change (with arrow), Volume, IV, Delta, LTP, Bid×Ask
+
+Strike Column: Strike price — ATM row highlighted with a blue background and 'ATM' badge.
+
+PE Columns: LTP, Bid×Ask, Delta, IV, Volume, OI Change, OI
+
+OI Heatmap: OI values are colour-coded by magnitude using a blue gradient — darker = higher OI. Helps visually identify key support/resistance levels where institutions are positioned.
+
+IV Skew Micro-Chart: A small sparkline above the table showing IV across strikes (volatility smile/smirk). Useful for identifying IV anomalies.
+
+PCR Display: Put-Call Ratio (OI and Volume-based) displayed prominently above the table with a trend arrow.
+
+Strike Filter: ATM ± 10 strikes shown by default. User can expand to ± 20.
+
+Expiry Selector: Dropdown to switch between weekly and monthly expiry chains.
+
+
+
+3.3.4 Page 3 — Trade History
+
+Complete trade log with filtering, sorting, and analytics:
+
+
+
+Trade Table: Date, Instrument, Symbol, Direction, Lots, Entry, Exit, P&L ₹, P&L %, Duration, Exit Reason, Strategy. Sortable by any column.
+
+Date Range Filter: Date picker to filter by any range. Presets: Today, This Week, This Month, All Time.
+
+Performance Cards: Win Rate (donut chart), Profit Factor, Average Trade Duration, Best Day, Worst Day, Consecutive Wins/Losses.
+
+Monthly P&L Heatmap: Calendar grid view where each day is colour-coded by P&L magnitude (GitHub contribution graph style). Gives an instant visual sense of consistency.
+
+Strategy Breakdown: Pie chart showing P&L contribution by strategy. Helps identify which strategies are working.
+
+Instrument Split: Side-by-side comparison of NIFTY vs BANKNIFTY performance metrics.
+
+
+
+3.3.5 Page 4 — Risk Monitor
+
+Dedicated page for real-time and historical risk analysis:
+
+
+
+Greeks Exposure: Table showing net Delta, net Theta (daily ₹ decay), net Vega across all open positions. Colour-coded: high theta decay shown in red.
+
+Capital Utilisation: Stacked bar showing premium deployed (NIFTY + BANKNIFTY) vs available margin.
+
+Drawdown Chart: Rolling drawdown curve for the current month. Max drawdown annotated.
+
+Risk Check Log: Live log of all pre-trade risk checks. Shows what was approved/rejected and the specific rule that triggered.
+
+
+
+3.3.6 Page 5 — Configuration
+
+Live configuration editor — changes are immediately sent to the backend via PUT API and take effect on the next trade:
+
+
+
+Risk Parameters: Editable form for all risk thresholds (daily limits, IV Rank threshold, delta filters, etc.) with validation and confirmation modal before save.
+
+Strategy Toggles: Toggle switches to enable/disable each strategy with current performance stats shown next to each.
+
+Email Alerts Config: Toggle individual email alert types on/off. Set minimum P&L threshold for profit alerts.
+
+Event Blackout: Add/remove event dates from the trading blackout calendar.
+
+
+
+3.4 State Management Architecture
+
+Zustand stores are the single source of truth for all frontend state. WebSocket events update stores directly; React components react to store changes:
+
+// stores/botStore.ts
+
+interface BotStore {
+
+  status:       BotStatus
+
+  positions:    Map<string, Position>
+
+  signals:      Signal[]
+
+  dailyPnl:     DailyPnL
+
+  riskBudget:   RiskBudget
+
+  niftyChain:   OptionChain
+
+  bnfChain:     OptionChain
+
+  vix:          VixData
+
+  alerts:       Alert[]
+
+
+
+  // WebSocket event handlers (called from useWebSocket hook)
+
+  onPositionUpdate: (data) => void
+
+  onTradeEntry:     (data) => void
+
+  onTradeExit:      (data) => void
+
+  onSignalDetected: (data) => void
+
+  onRiskUpdate:     (data) => void
+
+  onChainUpdate:    (data) => void
+
+}
+
+
+
+3.5 WebSocket Client Hook
+
+// hooks/useWebSocket.ts
+
+export function useWebSocket() {
+
+  const store = useBotStore()
+
+  const wsRef = useRef<WebSocket | null>(null)
+
+
+
+  const connect = useCallback(() => {
+
+    const token = import.meta.env.VITE_DASHBOARD_TOKEN
+
+    const ws = new WebSocket(`ws://localhost:8000/ws/live?token=${token}`)
+
+
+
+    ws.onmessage = (event) => {
+
+      const { event: type, data } = JSON.parse(event.data)
+
+      switch (type) {
+
+        case 'POSITION_UPDATE':   store.onPositionUpdate(data); break
+
+        case 'TRADE_ENTRY':       store.onTradeEntry(data);     break
+
+        case 'TRADE_EXIT':        store.onTradeExit(data);      break
+
+        case 'SIGNAL_DETECTED':   store.onSignalDetected(data); break
+
+        case 'CHAIN_UPDATE':      store.onChainUpdate(data);    break
+
+        case 'RISK_BUDGET_UPDATE':store.onRiskUpdate(data);     break
+
+      }
+
+    }
+
+
+
+    ws.onclose = () => setTimeout(connect, 2000)  // auto-reconnect
+
+    wsRef.current = ws
+
+  }, [])
+
+
+
+  useEffect(() => { connect(); return () => wsRef.current?.close() }, [])
+
+}
+
+
+
+3.6 Frontend File Structure
+
+frontend/
+
+├── src/
+
+│   ├── pages/
+
+│   │   ├── HomeDashboard.tsx      # Live monitor — main page
+
+│   │   ├── OptionChain.tsx        # Chain viewer
+
+│   │   ├── TradeHistory.tsx       # Trade log + analytics
+
+│   │   ├── RiskMonitor.tsx        # Risk + Greeks exposure
+
+│   │   └── Configuration.tsx      # Config editor
+
+│   ├── components/
+
+│   │   ├── layout/
+
+│   │   │   ├── TopBar.tsx         # Spot prices, VIX, P&L strip
+
+│   │   │   ├── SideNav.tsx        # Navigation sidebar
+
+│   │   │   └── SignalTicker.tsx   # Bottom signal feed
+
+│   │   ├── positions/
+
+│   │   │   ├── PositionsTable.tsx # Live positions grid
+
+│   │   │   ├── PositionRow.tsx    # Single position row
+
+│   │   │   └── ExitButton.tsx     # Manual exit trigger
+
+│   │   ├── charts/
+
+│   │   │   ├── PnLCurve.tsx       # Intraday P&L chart
+
+│   │   │   ├── RiskGauge.tsx      # Arc gauge for budgets
+
+│   │   │   ├── IVRankGauge.tsx    # IV Rank indicator
+
+│   │   │   ├── MonthlyHeatmap.tsx # Calendar P&L heatmap
+
+│   │   │   └── StrategyPie.tsx    # Strategy P&L split
+
+│   │   ├── chain/
+
+│   │   │   ├── ChainTable.tsx     # Full option chain
+
+│   │   │   └── IVSkewChart.tsx    # Volatility smile
+
+│   │   └── shared/
+
+│   │       ├── StatusBadge.tsx    # LIVE/PAUSED/HALTED badge
+
+│   │       ├── AlertToast.tsx     # Trade notification toasts
+
+│   │       └── MetricCard.tsx     # Reusable stat card
+
+│   ├── stores/
+
+│   │   ├── botStore.ts            # Zustand — main bot state
+
+│   │   └── configStore.ts         # Zustand — config state
+
+│   ├── hooks/
+
+│   │   ├── useWebSocket.ts        # WS connection + event routing
+
+│   │   └── useApi.ts              # TanStack Query wrappers
+
+│   ├── types/
+
+│   │   └── api.ts                 # TypeScript interfaces
+
+│   └── main.tsx
+
+├── index.html
+
+├── vite.config.ts
+
+├── tailwind.config.ts
+
+└── package.json
+
+
+
+
+4. Email Alert System — SMTP with HTML Templates
+
+The email alert system replaces Telegram entirely. It uses Python's aiosmtplib for async SMTP delivery and Jinja2 for rich HTML email templates. All emails are sent from a personal Gmail account using App Password authentication.
+
+
+
+4.1 Email Service Architecture
+
+Item
+
+Description
+
+SMTP Library
+
+aiosmtplib — async SMTP client compatible with asyncio. Non-blocking; never delays trading logic.
+
+Email Provider
+
+Gmail SMTP (smtp.gmail.com:587 with STARTTLS). Use a dedicated Gmail account for the bot.
+
+Authentication
+
+Gmail App Password (not the account password). Generated in Google Account → Security → App Passwords.
+
+Template Engine
+
+Jinja2 — renders HTML email templates with dynamic trade data.
+
+Queue
+
+asyncio.Queue — all email send requests are queued and processed by a background worker. Prevents email I/O from blocking trading.
+
+Rate Limiting
+
+Maximum 10 emails per hour to avoid Gmail sending limits.
+
+Recipient
+
+Single personal email address from .env. No multi-user overhead.
+
+From Address
+
+bot@gmail.com (your dedicated bot Gmail) — keeps alerts separate from personal inbox.
+
+
+
+4.2 Email Service Class
+
+# alerts/email_service.py
+
+class EmailService:
+
+    def __init__(self, settings: Settings):
+
+        self.smtp_host     = 'smtp.gmail.com'
+
+        self.smtp_port     = 587
+
+        self.username      = settings.GMAIL_USER        # bot account
+
+        self.password      = settings.GMAIL_APP_PASS    # App Password
+
+        self.recipient     = settings.ALERT_EMAIL       # your personal email
+
+        self.queue         = asyncio.Queue()
+
+        self.rate_limiter  = RateLimiter(max=10, window_secs=3600)
+
+
+
+    async def send(self, template: str, subject: str, context: dict):
+
+        '''Queue an email — non-blocking for caller'''
+
+        await self.queue.put(EmailTask(template, subject, context))
+
+
+
+    async def run_queue_worker(self):
+
+        '''Background task — processes email queue'''
+
+        while True:
+
+            task = await self.queue.get()
+
+            if self.rate_limiter.allow():
+
+                html = self._render(task.template, task.context)
+
+                await self._send_smtp(task.subject, html)
+
+            self.queue.task_done()
+
+
+
+    async def _send_smtp(self, subject: str, html: str):
+
+        msg = MIMEMultipart('alternative')
+
+        msg['Subject'] = subject
+
+        msg['From']    = self.username
+
+        msg['To']      = self.recipient
+
+        msg.attach(MIMEText(html, 'html'))
+
+        async with aiosmtplib.SMTP(self.smtp_host, self.smtp_port) as s:
+
+            await s.starttls()
+
+            await s.login(self.username, self.password)
+
+            await s.send_message(msg)
+
+
+
+4.3 Email Templates — Design Specification
+
+Each email uses a responsive HTML template with inline CSS (required for email client compatibility). The design uses a dark header strip with the bot brand colours, clean data tables, and clear colour coding for profit/loss.
+
+
+
+4.3.1 Trade Entry Email
+
+Item
+
+Description
+
+Subject
+
+🟢 Trade Entry — NIFTY CE 22500 | +2 Lots | ₹8,550 deployed
+
+Header Strip
+
+Dark navy background, instrument badge (NIFTY/BANKNIFTY in accent colour), timestamp
+
+Data Table
+
+Strike, Expiry, Direction, Lots, Premium, Total Cost, Delta, IV, IV Rank, Daily Theta
+
+Strategy Box
+
+Strategy name + signal rationale text in italic
+
+Risk Levels
+
+SL price | Initial Target | Max Risk on trade
+
+Footer
+
+Bot status link + 'Reply to this email has no effect' disclaimer
+
+
+
+4.3.2 Trade Exit — Profit Email
+
+Item
+
+Description
+
+Subject
+
+✅ Trade Closed +₹2,800 (+110%) — NIFTY CE 22500 | Trailing SL
+
+Header Strip
+
+Green background with profit amount prominently displayed
+
+Summary Row
+
+Entry → Exit price, profit in ₹ and %, holding duration, exit reason
+
+Data Table
+
+All entry details + exit price, exit time
+
+Context
+
+NIFTY spot at exit, IV at exit (to show if IV played a role)
+
+Running Total
+
+Today's total realised P&L after this trade, win rate
+
+
+
+4.3.3 Trade Exit — Loss Email
+
+Item
+
+Description
+
+Subject
+
+🔴 Trade Closed −₹680 (−40%) — BNKFY PE 48000 | SL Hit
+
+Header Strip
+
+Red/dark background, loss amount in white
+
+Summary Row
+
+Entry → SL exit price, loss in ₹ and %, duration, exit reason (SL Hit)
+
+Analysis Row
+
+Spot move since entry, IV change since entry
+
+Running Total
+
+Today's remaining budget, updated win rate
+
+
+
+4.3.4 Daily Morning Briefing
+
+Item
+
+Description
+
+Subject
+
+☀️ Bot Morning Briefing — 27 Feb 2025 | NIFTY: 22,340 | VIX: 13.8
+
+Time Sent
+
+09:00 AM IST daily (15 mins before bot starts)
+
+Content
+
+Yesterday's P&L summary, current IV Rank for both instruments, today's event calendar (any blackout events), session validity confirmation, weekly performance
+
+Action Items
+
+Bold warning if IV Rank > 40 (reduced activity expected), any expiry dates today
+
+
+
+4.3.5 EOD Summary Email
+
+Item
+
+Description
+
+Subject
+
+📊 EOD Summary — 27 Feb 2025 | Net P&L: +₹3,420 | 2W/1L
+
+Time Sent
+
+3:40 PM IST after square-off complete
+
+Content
+
+Full session summary: trade count, win/loss split, gross profit, gross loss, net P&L, best trade, worst trade, capital used, NIFTY vs BANKNIFTY breakdown
+
+Performance Chart
+
+Simple HTML bar chart showing intraday P&L progression (using table-based bars, works in all email clients)
+
+Trade Log Table
+
+Every trade taken today with all details in a compact table
+
+
+
+4.3.6 Risk Alert Emails
+
+Alert
+
+Subject Prefix
+
+Content
+
+When Sent
+
+Soft Limit Hit
+
+⚠️ Warning
+
+Daily loss approaching limit. Current P&L, remaining budget, active positions
+
+When daily loss crosses ₹7,000
+
+Hard Limit Hit
+
+🚨 CRITICAL
+
+Bot halted. All positions squared off. Immediate action may be needed.
+
+When daily loss crosses ₹10,000
+
+WebSocket Down
+
+❌ Feed Error
+
+Market data disconnected. Reconnect attempts underway. Positions at risk.
+
+After 3 failed reconnect attempts
+
+Order Rejected
+
+❌ Order Failed
+
+Order could not be placed. Reason from broker. Signal missed.
+
+On every rejection
+
+Session Error
+
+🔑 Auth Error
+
+JWT expired and auto-renewal failed. Manual intervention needed.
+
+On auth failure
+
+
+
+4.4 Email Configuration
+
+# .env additions for email service
+
+GMAIL_USER=your.bot.account@gmail.com
+
+GMAIL_APP_PASS=xxxx-xxxx-xxxx-xxxx   # 16-char App Password
+
+ALERT_EMAIL=your.personal@gmail.com  # Where you receive alerts
+
+
+
+# config/email_config.yaml
+
+email:
+
+  enabled:              true
+
+  rate_limit_per_hour:  10
+
+  alerts:
+
+    trade_entry:        true
+
+    trade_exit_profit:  true
+
+    trade_exit_loss:    true
+
+    morning_briefing:   true
+
+    eod_summary:        true
+
+    risk_warnings:      true
+
+    order_rejected:     false   # can be noisy — disable if needed
+
+    session_errors:     true
+
+  min_pnl_for_profit_alert: 500  # only email if profit > ₹500
+
+
+
+▸ Gmail's daily sending limit for App Passwords is 500 emails/day — far more than this bot will ever need. The 10/hour rate limit is a bot-side precaution to prevent alert storms during volatile sessions.
+
+
+
+
+5. Personal Use — Architecture Simplifications
+
+Because this bot is used exclusively by one person, several architectural components can be drastically simplified compared to a multi-user or commercial system. This reduces complexity, maintenance burden, and attack surface.
+
+
+
+5.1 Authentication — Simple Static Token
+
+There is no user database, no OAuth, no JWT login flow for the dashboard. Authentication is a single static Bearer token stored in .env:
+
+# .env
+
+DASHBOARD_TOKEN=your-long-random-secret-token-here
+
+
+
+# Frontend (.env.local)
+
+VITE_DASHBOARD_TOKEN=your-long-random-secret-token-here
+
+
+
+The backend validates this token on every API request and on WebSocket connection.
+
+The React frontend reads the token from its .env.local and sends it as a Bearer header on all API calls.
+
+Since this runs locally or on your personal VPS, the security model is: control network access (VPN or SSH tunnel) + static token. No need for OAuth 2.0 complexity.
+
+To access the dashboard remotely, use SSH port forwarding: ssh -L 5173:localhost:5173 your-vps which tunnels the frontend to your local machine securely.
+
+
+
+5.2 Simplified Components vs Multi-User
+
+Component
+
+Multi-User Version
+
+Personal Simplification
+
+Auth
+
+OAuth2, JWT, refresh tokens, user DB
+
+Single static token in .env
+
+Users & Roles
+
+Role-based access, admin panel
+
+Not needed — you are the only user
+
+Multi-Account
+
+Account selector, separate positions per user
+
+Single AngelOne account, single portfolio
+
+Audit Log
+
+Who did what, tamper-proof logs
+
+Simple structured logs in a file
+
+CORS
+
+Strict per-origin allowlists
+
+localhost:5173 only
+
+Rate Limiting
+
+Per-user API rate limits
+
+Simple global rate limiter
+
+Notifications
+
+Push notifications, multi-channel
+
+Single email address
+
+Dashboard Access
+
+HTTPS + domain
+
+localhost or SSH tunnel
+
+Database
+
+Multi-tenant PostgreSQL
+
+Single SQLite file (upgradeable to PostgreSQL)
+
+Backup
+
+Automated multi-region backups
+
+Daily SQLite file copy to cloud
+
+Deployment
+
+Docker, Kubernetes, CI/CD
+
+systemd services, simple script
+
+
+
+5.3 Local-First Deployment
+
+The recommended personal setup runs everything on a single VPS (Ubuntu 22.04) in Mumbai for minimum latency to AngelOne servers:
+
+
+
+5.3.1 System Services
+
+# /etc/systemd/system/options-bot-backend.service
+
+[Unit]
+
+Description=Options Bot Backend
+
+After=network.target
+
+
+
+[Service]
+
+User=ubuntu
+
+WorkingDirectory=/home/ubuntu/options-bot/backend
+
+ExecStart=/home/ubuntu/.venv/bin/python main.py
+
+Restart=on-failure
+
+RestartSec=5
+
+StartLimitIntervalSec=60
+
+StartLimitBurst=3
+
+EnvironmentFile=/home/ubuntu/options-bot/.env
+
+
+
+[Install]
+
+WantedBy=multi-user.target
+
+
+
+# /etc/systemd/system/options-bot-frontend.service
+
+[Service]
+
+WorkingDirectory=/home/ubuntu/options-bot/frontend
+
+ExecStart=/usr/bin/npm run preview -- --port 5173 --host
+
+# (or nginx to serve the built frontend)
+
+
+
+5.3.2 Startup & Shutdown Scripts
+
+# start_bot.sh
+
+#!/bin/bash
+
+echo 'Starting Options Bot...'
+
+sudo systemctl start options-bot-backend
+
+sudo systemctl start options-bot-frontend
+
+echo 'Bot running. Dashboard: http://localhost:5173'
+
+
+
+# stop_bot.sh
+
+#!/bin/bash
+
+echo 'Stopping Options Bot...'
+
+sudo systemctl stop options-bot-backend
+
+sudo systemctl stop options-bot-frontend
+
+echo 'Bot stopped safely.'
+
+
+
+5.4 Remote Access via SSH Tunnel
+
+To access your dashboard from anywhere without exposing ports to the internet:
+
+# On your local machine (Mac/Linux/WSL)
+
+ssh -N -L 5173:localhost:5173 -L 8000:localhost:8000 ubuntu@YOUR_VPS_IP
+
+
+
+# Then open in browser:
+
+http://localhost:5173   # React dashboard
+
+http://localhost:8000/docs  # FastAPI Swagger docs
+
+
+
+▸ Keep the SSH tunnel open in a terminal tab while monitoring. Use autossh for a persistent tunnel that auto-reconnects if the connection drops.
+
+
+
+
+6. End-to-End Data Flow
+
+This section traces the complete journey of data from AngelOne's servers to your React dashboard — covering the entire technology stack in sequence.
+
+
+
+6.1 Live Tick → Dashboard Position Update
+
+AngelOne SmartAPI WebSocket
+
+    │  Raw tick JSON: { token, ltp, oi, bid, ask, ... }
+
+    ▼
+
+FeedManager.on_tick()
+
+    │  Normalise, route to instrument queue
+
+    ▼
+
+OptionChainManager.update()
+
+    │  Update strike data, recompute PCR
+
+    ▼
+
+GreeksEngine.refresh()
+
+    │  Recompute Delta/Theta/IV for ATM±3 strikes
+
+    ▼
+
+PositionManager.check_all_positions()
+
+    │  Check each open position against SL/target/time exits
+
+    ▼
+
+WSManager.broadcast('POSITION_UPDATE', {...})
+
+    │  Push to all connected WebSocket clients
+
+    ▼
+
+React useWebSocket hook
+
+    │  Receives JSON message
+
+    ▼
+
+botStore.onPositionUpdate(data)
+
+    │  Zustand store updated
+
+    ▼
+
+PositionRow component re-renders
+
+    ✓  User sees updated P&L within ~100ms of tick
+
+
+
+6.2 Signal → Order → Dashboard Notification → Email
+
+Strategy.generate_signal(snapshot)
+
+    │  Returns Signal object with all fields
+
+    ▼
+
+SignalAggregator.evaluate()
+
+    │  Resolve conflicts, boost confidence if multi-strategy
+
+    ▼
+
+WSManager.broadcast('SIGNAL_DETECTED', {...})
+
+    │  Signal feed panel in dashboard updates immediately
+
+    ▼
+
+RiskManager.approve(signal, portfolio)
+
+    │  Run 12 sequential checks
+
+    │  If FAIL → WSManager.broadcast('SIGNAL_REJECTED', {reason})
+
+    ▼
+
+RiskManager.compute_position_size(signal, portfolio)
+
+    │  Returns number of lots
+
+    ▼
+
+ExecutionEngine.buy(signal, lots)
+
+    │  Fetch LTP → liquidity check → margin check
+
+    │  → placeOrder() via SmartAPI REST
+
+    │  → Poll orderBook() for fill confirmation
+
+    ▼
+
+Portfolio.open_position(order, signal)
+
+    │  Register position in memory + persist to DB
+
+    ▼
+
+WSManager.broadcast('TRADE_ENTRY', {full_position})
+
+    │  Dashboard: new row appears in positions table
+
+    │  Dashboard: toast notification with all details
+
+    │  Dashboard: P&L curve updated, risk gauges updated
+
+    ▼
+
+EmailService.send('trade_entry', subject, context)
+
+    │  Queued in asyncio.Queue (non-blocking)
+
+    ▼
+
+EmailQueueWorker delivers HTML email
+
+    ✓  You receive rich HTML email within ~5 seconds
+
+
+
+6.3 Manual Exit from Dashboard
+
+User clicks 'Exit' button on PositionRow component
+
+    │  ExitButton.onClick()
+
+    ▼
+
+POST /api/v1/positions/{id}/exit (with Bearer token)
+
+    │  FastAPI route handler
+
+    ▼
+
+ExecutionEngine.exit(position, ExitSignal('MANUAL', ltp))
+
+    │  Place LIMIT sell order at bid
+
+    │  Poll for fill confirmation
+
+    ▼
+
+Portfolio.close_position(position, order)
+
+    │  Compute realised P&L, persist to DB
+
+    ▼
+
+WSManager.broadcast('TRADE_EXIT', {realised_pnl, reason: 'MANUAL'})
+
+    │  Dashboard: row removed from positions table
+
+    │  Dashboard: P&L curve and risk gauges update
+
+    ▼
+
+EmailService.send('trade_exit', ...)
+
+    ✓  Email delivered with exit details
+
+
+
+
+7. Complete Technology Reference
+
+
+
+7.1 Backend Dependencies
+
+Package
+
+Version
+
+Purpose
+
+fastapi
+
+0.111+
+
+REST API + WebSocket server framework
+
+uvicorn[standard]
+
+0.29+
+
+ASGI server for FastAPI
+
+pydantic-settings
+
+2.0+
+
+Settings from .env with type validation
+
+aiosmtplib
+
+3.0+
+
+Async SMTP client for email sending
+
+jinja2
+
+3.1+
+
+HTML email template rendering
+
+smartapi-python
+
+latest
+
+AngelOne SmartAPI official client
+
+pyotp
+
+2.9+
+
+TOTP for AngelOne 2FA login
+
+websocket-client
+
+1.7+
+
+SmartAPI WebSocket connection
+
+pandas
+
+2.0+
+
+Option chain analysis
+
+numpy
+
+1.26+
+
+Vectorised Greeks computation
+
+scipy
+
+1.12+
+
+Black-Scholes normal CDF
+
+py_vollib
+
+1.0+
+
+IV solver (Newton-Raphson)
+
+APScheduler
+
+3.10+
+
+EOD tasks, morning briefing scheduling
+
+SQLAlchemy
+
+2.0+
+
+Database ORM
+
+aiosqlite
+
+0.20+
+
+Async SQLite driver
+
+PyYAML
+
+6.0+
+
+Config file parsing
+
+python-dotenv
+
+1.0+
+
+Load .env variables
+
+structlog
+
+24.0+
+
+Structured JSON logging
+
+python-multipart
+
+0.0.9+
+
+Required for FastAPI form handling
+
+
+
+7.2 Frontend Dependencies
+
+Package
+
+Version
+
+Purpose
+
+react
+
+18.3+
+
+UI framework
+
+typescript
+
+5.4+
+
+Type safety
+
+vite
+
+5.2+
+
+Build tool + dev server
+
+react-router-dom
+
+6.23+
+
+Client-side routing
+
+zustand
+
+4.5+
+
+State management
+
+@tanstack/react-query
+
+5.0+
+
+REST data fetching + caching
+
+lightweight-charts
+
+4.1+
+
+TradingView financial charts (P&L curve)
+
+recharts
+
+2.12+
+
+Gauge charts, pie charts
+
+@tanstack/react-table
+
+8.16+
+
+Option chain virtualised table
+
+framer-motion
+
+11.0+
+
+Animations for toasts, transitions
+
+lucide-react
+
+0.383+
+
+Icon library
+
+tailwindcss
+
+3.4+
+
+Utility CSS framework
+
+@radix-ui/react-*
+
+latest
+
+Accessible headless UI primitives
+
+date-fns
+
+3.6+
+
+Date formatting (IST timezone)
+
+clsx
+
+2.1+
+
+Conditional class name utility
+
+
+
+7.3 Updated .env Reference — Complete File
+
+# ─── AngelOne SmartAPI ───────────────────────────────────
+
+ANGELONE_API_KEY=your_api_key
+
+ANGELONE_CLIENT_CODE=your_client_code
+
+ANGELONE_PASSWORD=your_password
+
+ANGELONE_TOTP_SECRET=your_totp_base32_secret
+
+
+
+# ─── Dashboard Authentication ─────────────────────────────
+
+DASHBOARD_TOKEN=generate-a-long-random-string-here
+
+
+
+# ─── Email (Gmail) ───────────────────────────────────────
+
+GMAIL_USER=your.bot.gmail@gmail.com
+
+GMAIL_APP_PASS=xxxx-xxxx-xxxx-xxxx
+
+ALERT_EMAIL=your.personal@gmail.com
+
+
+
+# ─── Database ────────────────────────────────────────────
+
+DATABASE_URL=sqlite+aiosqlite:///./trades.db
+
+
+
+# ─── Server ──────────────────────────────────────────────
+
+BACKEND_HOST=0.0.0.0
+
+BACKEND_PORT=8000
+
+
+
+# ─── Frontend .env.local (separate file in /frontend) ────
+
+VITE_BACKEND_URL=http://localhost:8000
+
+VITE_WS_URL=ws://localhost:8000
+
+VITE_DASHBOARD_TOKEN=same-token-as-backend
+
+
+
+7.4 Quick Start Commands
+
+# 1. Backend setup
+
+cd backend
+
+python -m venv .venv && source .venv/bin/activate
+
+pip install -r requirements.txt
+
+cp .env.example .env  # fill in your values
+
+python main.py
+
+
+
+# 2. Frontend setup (separate terminal)
+
+cd frontend
+
+npm install
+
+cp .env.example .env.local  # fill in token
+
+npm run dev
+
+
+
+# 3. Access dashboard
+
+open http://localhost:5173
+
+
+
+
+8. Security, Risk & Compliance Checklist
+
+
+
+Area
+
+Requirement
+
+Implementation
+
+API Keys
+
+No credentials in code
+
+.env file — gitignored, 600 permissions
+
+Dashboard Auth
+
+Protected from unauthorised access
+
+Static Bearer token, CORS locked to localhost
+
+Remote Access
+
+No open ports to internet
+
+SSH tunnel only — ports 5173 and 8000 not exposed
+
+Gmail App Pass
+
+Separate from main Google password
+
+App Password in .env — revocable independently
+
+Git Security
+
+.env never committed
+
+.gitignore: .env, .env.local, *.key
+
+Trading Limits
+
+Prevent runaway losses
+
+Hard daily limit + MIS auto-square-off by broker at 3:20 PM
+
+Order Flooding
+
+Prevent excessive orders
+
+Max 3 orders/minute rate limiter in execution engine
+
+SEBI Compliance
+
+Algo registration required
+
+Register with NSE and AngelOne per SEBI/HO/MRD circular
+
+Email Rate Limit
+
+No alert storms
+
+10 emails per hour hard limit in EmailService
+
+Frontend Token Exposure
+
+VITE_ vars visible in JS bundle
+
+Token is acceptable risk for personal local-only use
+
+
+
+▸ SEBI Regulation: All algorithmic trading (any software that automatically generates and places orders) requires prior approval from the stock exchange. Contact AngelOne's support team to enable algo trading on your account and register your system with NSE before live trading.
+
+
+
+9. Summary — Architecture at a Glance
+
+
+
+Layer
+
+Technology
+
+Runs On
+
+Port
+
+Trading Engine
+
+Python asyncio + AngelOne SmartAPI
+
+VPS / Local machine
+
+—
+
+REST + WebSocket API
+
+FastAPI + Uvicorn
+
+Same process as engine
+
+8000
+
+Dashboard
+
+React 18 + Vite + TypeScript
+
+Browser (served by Vite/Nginx)
+
+5173
+
+Database
+
+SQLite (aiosqlite)
+
+Local file: trades.db
+
+—
+
+Email Alerts
+
+aiosmtplib + Jinja2 → Gmail SMTP
+
+Same process as engine
+
+587 (outbound)
+
+Remote Access
+
+SSH Port Forwarding
+
+Your laptop / phone
+
+—
+
+
+
+This architecture gives you a professional-grade, fully observable trading bot with a real-time React dashboard — all running on a single VPS with zero external service dependencies beyond AngelOne and Gmail.
+
+Confidential — Personal Use Only  ·  AngelOne SmartAPI  ·  NSE NFO

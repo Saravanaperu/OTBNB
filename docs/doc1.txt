@@ -1,0 +1,3351 @@
+Doc 1:
+OPTIONS BUYING BOT — NIFTY & BANKNIFTY | AngelOne SmartAPI | Architecture Document
+
+
+
+
+
+
+
+OPTIONS BUYING BOT
+
+NIFTY & BANKNIFTY
+
+AngelOne SmartAPI Integration
+
+END-TO-END SYSTEM ARCHITECTURE DOCUMENT
+
+
+
+
+
+
+
+
+
+Version 1.0   |   Indian Equity Derivatives Market
+
+Exchange: NSE   |   Instruments: NIFTY 50 + BANKNIFTY
+
+
+
+
+1. Executive Summary
+
+This document describes the complete, production-grade architecture of an algorithmic options buying bot designed exclusively for the Indian derivatives market. The system simultaneously trades weekly and monthly options on NIFTY 50 (NSE) and BANKNIFTY (NSE) using AngelOne SmartAPI as the brokerage gateway.
+
+The bot is designed as a fully automated, intraday-only system that ingests real-time market data, processes it through multiple signal-generation strategies, validates each opportunity against a multi-layered risk framework, executes orders with precision, and monitors live positions for optimal exit conditions — all while streaming real-time alerts and maintaining detailed trade logs.
+
+
+
+1.1 Scope & Objectives
+
+Simultaneous Coverage: Trade NIFTY and BANKNIFTY options in parallel with independent signal engines and shared risk budgets.
+
+Intraday Only: All positions are opened and closed within the same trading session (9:15 AM – 3:20 PM IST) to eliminate overnight theta risk.
+
+Options Buyer Mindset: The system buys CE/PE options with controlled premium outlay, maximising the reward-to-risk ratio.
+
+Latency Target: End-to-end signal-to-order latency under 500 milliseconds.
+
+Capital Safety: Hard daily loss limits enforced at broker level and application level.
+
+
+
+1.2 Key Design Principles
+
+Principle
+
+Rationale
+
+Implementation
+
+Never buy high IV
+
+Buying expensive options destroys edge
+
+IV Rank < 50 filter on every trade
+
+LIMIT orders only
+
+Market orders on NFO cause terrible slippage
+
+All orders placed as LIMIT with dynamic pricing
+
+Intraday squared-off
+
+Overnight theta decay kills premium buyers
+
+Hard EOD square-off at 3:20 PM
+
+Per-instrument isolation
+
+NIFTY & BANKNIFTY have different risk profiles
+
+Separate risk budgets per instrument
+
+Greeks-first selection
+
+Moneyness alone is insufficient for strike selection
+
+Delta, Theta, IV Rank filters on every strike
+
+Event awareness
+
+Macro events spike IV unfairly
+
+Pre-configured event calendar blocks trading
+
+Modular strategies
+
+No single strategy works forever
+
+Plugin architecture — strategies hot-swappable
+
+
+
+
+2. System Architecture Overview
+
+The bot is structured as a multi-layer event-driven architecture. Data flows from AngelOne SmartAPI through progressive processing stages — ingestion, enrichment, signal generation, risk validation, and execution — before reaching the brokerage.
+
+
+
+2.1 Architectural Layers
+
+Layer
+
+Subsystem
+
+Technology
+
+Responsibility
+
+L1 – Gateway
+
+AngelOne SmartAPI
+
+REST + WebSocket
+
+Authentication, order routing, market data
+
+L2 – Data
+
+Feed Manager
+
+Python asyncio
+
+Tick ingestion, normalisation, storage
+
+L3 – Analytics
+
+Greeks Engine
+
+py_vollib / NumPy
+
+IV surface, Delta, Theta, Vega computation
+
+L3 – Analytics
+
+Option Chain Parser
+
+Pandas
+
+OI analysis, PCR, IV Rank, buildup detection
+
+L4 – Strategy
+
+Signal Engine
+
+Python classes
+
+Pluggable strategy modules per instrument
+
+L5 – Risk
+
+Risk Manager
+
+Rule engine
+
+Multi-level trade approval and position sizing
+
+L6 – Execution
+
+Order Engine
+
+SmartAPI REST
+
+Order placement, modification, cancellation
+
+L7 – Position
+
+Position Monitor
+
+Event loop
+
+Live P&L, SL/target tracking, exit triggers
+
+L8 – Output
+
+Monitor & Alerter
+
+Telegram Bot API
+
+Real-time alerts, daily reports, error notifications
+
+L9 – Storage
+
+Data Store
+
+SQLite / PostgreSQL
+
+Trade history, logs, analytics persistence
+
+
+
+2.2 Component Interaction Map
+
+The following describes the data and control flow between components:
+
+AngelOne SmartAPI WebSocket streams live ticks for all subscribed tokens (NIFTY, BANKNIFTY spot + options chain).
+
+Feed Manager normalises each tick and routes it to two parallel processing pipelines — one for NIFTY, one for BANKNIFTY.
+
+The Option Chain Parser continuously updates a live snapshot: LTP, OI, IV, bid/ask, volume, PCR for each strike.
+
+The Greeks Engine recomputes Delta, Theta, Gamma, Vega on each relevant tick, caching results.
+
+Each Strategy Module polls the latest enriched snapshot and emits a Signal object when conditions are met.
+
+The Risk Manager evaluates the Signal against daily P&L, open positions, IV Rank, time constraints, and capital limits before approving.
+
+On approval, the Execution Engine fetches a fresh LTP, constructs a LIMIT order, and submits it to AngelOne NFO.
+
+The Position Monitor tracks each open position in real-time against SL, trailing SL, target, and time-based exit rules.
+
+All events are logged to the database and critical events trigger Telegram notifications.
+
+
+
+2.3 Technology Stack
+
+Category
+
+Technology
+
+Purpose
+
+Language
+
+Python 3.11+
+
+Core bot logic, async processing
+
+API Client
+
+smartapi-python (official)
+
+AngelOne SmartAPI wrapper
+
+Async Runtime
+
+asyncio + aiohttp
+
+Non-blocking WebSocket, concurrent pipelines
+
+Options Math
+
+py_vollib, mibian, scipy
+
+Black-Scholes Greeks computation
+
+Data Processing
+
+pandas, numpy
+
+Option chain analysis, OI computations
+
+TOTP / Auth
+
+pyotp
+
+2FA TOTP for SmartAPI login
+
+Scheduling
+
+APScheduler
+
+EOD square-off, daily summary, heartbeat
+
+Database
+
+SQLite (dev) / PostgreSQL (prod)
+
+Trade logs, tick history, performance data
+
+Alerting
+
+python-telegram-bot
+
+Real-time order and alert notifications
+
+Configuration
+
+PyYAML + python-dotenv
+
+Strategy params, API keys, risk config
+
+Logging
+
+Python logging + structlog
+
+Structured JSON logs for analysis
+
+Dashboard
+
+Streamlit
+
+Live P&L dashboard, position monitor
+
+Backtesting
+
+Custom engine + openpyxl
+
+Historical strategy validation
+
+
+
+
+3. Module 1 — Authentication & Session Management
+
+AngelOne SmartAPI requires a multi-step authentication process combining API credentials, a password, and a time-based one-time password (TOTP). Session tokens have a finite validity window and must be renewed proactively.
+
+
+
+3.1 Authentication Flow
+
+Step 1 – TOTP Generation: Uses the TOTP secret stored in .env to generate a 6-digit OTP via pyotp library (RFC 6238 compliant, 30-second window).
+
+Step 2 – Session Creation: Calls SmartAPI generateSession() with API_KEY, CLIENT_CODE, PASSWORD, and TOTP. Returns jwtToken, refreshToken, and feedToken.
+
+Step 3 – Token Storage: Stores jwtToken (used for REST calls), refreshToken (for renewal), and feedToken (for WebSocket authentication) in a thread-safe SessionStore.
+
+Step 4 – Token Refresh: JWT tokens expire every 24 hours. APScheduler renews the token at 8:55 AM daily, 20 minutes before market open.
+
+Step 5 – WebSocket Auth: The SmartWebSocket instance is initialised with AUTH_TOKEN and CLIENT_CODE at bot startup.
+
+
+
+3.2 Session Manager — Full Specification
+
+Field
+
+Details
+
+Class
+
+SessionManager
+
+File
+
+core/session_manager.py
+
+Attributes
+
+api_key, client_code, password, totp_secret, jwt_token, refresh_token, feed_token, session_expiry
+
+login()
+
+Generates TOTP, calls generateSession(), stores tokens, schedules renewal
+
+refresh_token()
+
+Calls generateToken() with refresh_token to extend session without full re-login
+
+get_jwt()
+
+Returns current jwt_token, auto-refreshes if within 30 min of expiry
+
+get_feed_token()
+
+Returns feedToken used by WebSocket authentication
+
+on_session_error()
+
+Handles InvalidTokenException — triggers immediate re-login
+
+is_market_hours()
+
+Returns True between 09:15 and 15:30 IST on weekdays (excluding NSE holidays)
+
+
+
+3.3 Configuration & Secrets
+
+All credentials are loaded from a .env file and never hardcoded. The settings.yaml file contains non-sensitive configuration.
+
+# .env (never commit to version control)
+
+ANGELONE_API_KEY=your_api_key
+
+ANGELONE_CLIENT_CODE=your_client_code
+
+ANGELONE_PASSWORD=your_password
+
+ANGELONE_TOTP_SECRET=your_totp_secret_base32
+
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+
+TELEGRAM_CHAT_ID=your_chat_id
+
+DATABASE_URL=sqlite:///trades.db
+
+
+
+NOTE: The TOTP secret is different from a 6-digit OTP. It is the base-32 secret used to generate OTPs. Retrieve it when setting up 2FA in the AngelOne app by scanning the QR code and extracting the secret parameter from the OTA URI.
+
+
+
+
+4. Module 2 — Instrument Registry
+
+The Instrument Registry is a centralised, pre-loaded database of all tradeable tokens for NIFTY and BANKNIFTY options. AngelOne provides a master instrument file (JSON/CSV) that must be downloaded and parsed daily before market open.
+
+
+
+4.1 Instrument Master Download
+
+AngelOne publishes a daily instrument master at: https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json
+
+This file contains all symbols with their token IDs, lot sizes, expiry dates, strike prices, and option types.
+
+The registry downloads and parses this file at 08:30 AM daily, filtering exclusively for NFO (NSE Futures & Options) exchange entries.
+
+
+
+4.2 NIFTY & BANKNIFTY Specifications
+
+Parameter
+
+NIFTY
+
+BANKNIFTY
+
+Notes
+
+Underlying Symbol
+
+NIFTY
+
+BANKNIFTY
+
+NSE Index symbols
+
+Exchange
+
+NFO
+
+NFO
+
+Futures & Options segment
+
+Spot Reference
+
+NSE:NIFTY
+
+NSE:NIFTY BANK
+
+For spot price fetch
+
+Lot Size
+
+50
+
+15
+
+Contracts per lot — check daily, SEBI revises
+
+Strike Interval
+
+50 points
+
+100 points
+
+Distance between consecutive strikes
+
+Weekly Expiry Day
+
+Thursday
+
+Wednesday
+
+Expiry changes periodically — verify
+
+Monthly Expiry
+
+Last Thursday
+
+Last Wednesday
+
+Monthly contracts
+
+Trading Hours
+
+09:15 – 15:30
+
+09:15 – 15:30
+
+IST
+
+Circuit Limits
+
+±10% on options
+
+±10% on options
+
+Daily price band on options
+
+Tick Size
+
+0.05
+
+0.05
+
+Minimum price movement
+
+Max OTM Strikes
+
+±10 strikes
+
+±10 strikes
+
+Bot trading range from ATM
+
+
+
+4.3 InstrumentRegistry Class
+
+The registry pre-computes and caches all relevant tokens to avoid lookup overhead during live trading.
+
+Field
+
+Details
+
+Method
+
+Description
+
+load_master()
+
+Downloads and parses the AngelOne instrument master JSON file
+
+build_nifty_chain(expiry)
+
+Extracts all NIFTY CE + PE tokens for a given expiry date
+
+build_banknifty_chain(expiry)
+
+Extracts all BANKNIFTY CE + PE tokens for a given expiry date
+
+get_token(symbol)
+
+Returns numeric token ID for a given tradingsymbol string
+
+get_atm_strike(spot, instrument)
+
+Rounds spot price to nearest valid strike for the instrument
+
+get_strikes_range(atm, n, instrument)
+
+Returns n strikes above and below ATM
+
+get_nearest_expiry(instrument)
+
+Returns the nearest weekly/monthly expiry date string
+
+get_expiry_list(instrument)
+
+Returns all available expiry dates for an instrument
+
+build_tradingsymbol(instrument, expiry, strike, option_type)
+
+Constructs NFO tradingsymbol e.g. NIFTY24JAN21500CE
+
+get_lot_size(instrument)
+
+Returns current lot size (50 for NIFTY, 15 for BANKNIFTY)
+
+
+
+4.4 Expiry Calendar Logic
+
+The bot must correctly handle weekly and monthly expiries for both instruments:
+
+Thursday (NIFTY Weekly): NIFTY has weekly expiries every Thursday. If Thursday is a holiday, expiry shifts to Wednesday.
+
+Wednesday (BANKNIFTY Weekly): BANKNIFTY has weekly expiries every Wednesday. If Wednesday is a holiday, expiry shifts to Tuesday.
+
+Monthly Expiry: The last Thursday (NIFTY) and last Wednesday (BANKNIFTY) of each month is the monthly expiry.
+
+0DTE Detection: The registry detects when the nearest expiry falls on today's date and flags it as a 0DTE (zero days to expiry) instrument. The risk manager applies stricter rules for 0DTE trading.
+
+NSE Holiday Calendar: A YAML-configured list of NSE trading holidays is maintained. The registry skips holidays when computing expiry dates.
+
+
+
+
+5. Module 3 — Market Data Layer
+
+The Market Data Layer is the foundation of the entire bot. It is responsible for ingesting real-time price, volume, OI, and quote data from AngelOne SmartAPI via two channels: a persistent WebSocket stream for live ticks and REST API calls for snapshot data.
+
+
+
+5.1 Data Sources
+
+Source
+
+Channel
+
+Data Fields
+
+Live Ticks
+
+SmartAPI WebSocket (Mode 3)
+
+LTP, Open, High, Low, Close, Volume, OI, Bid/Ask, Last Trade Time
+
+Option Chain Snapshot
+
+REST: getOptionChain()
+
+All strikes: LTP, OI, OI Change, IV, Greeks, Bid, Ask, Volume
+
+Spot Price
+
+REST: ltpData()
+
+NIFTY and BANKNIFTY spot index values
+
+Historical OHLCV
+
+REST: getCandleData()
+
+1min/5min candles for technical indicators
+
+Market Status
+
+REST: getMarketData()
+
+Circuit breaker status, trading halt information
+
+Account Info
+
+REST: getProfile(), getRMS()
+
+Available margin, used margin, open positions
+
+
+
+5.2 WebSocket Feed Architecture
+
+The WebSocket connection uses AngelOne's SmartWebSocket which implements an event-driven callback model. The bot subscribes to a list of token IDs and receives real-time tick data.
+
+
+
+5.2.1 Subscription Modes
+
+Field
+
+Details
+
+Mode 1 – LTP
+
+Only last traded price. Used for monitoring inactive strikes.
+
+Mode 2 – Quote
+
+LTP + Bid/Ask + Volume. Used for strike shortlisting.
+
+Mode 3 – Full (SnapQuote)
+
+Complete tick: LTP, OHLC, Volume, OI, Bid/Ask. Used for actively traded strikes near ATM.
+
+
+
+5.2.2 Token Subscription Strategy
+
+At market open, the bot subscribes to Mode 3 for 5 strikes ITM and 5 strikes OTM for both CE and PE for both NIFTY and BANKNIFTY — totalling approximately 40 tokens.
+
+As spot price moves, the subscription list is dynamically updated to keep ATM +/- 5 strikes in Mode 3 and move distant strikes to Mode 1.
+
+WebSocket heartbeat is sent every 30 seconds. If no data is received for 60 seconds, the bot triggers an automatic reconnect.
+
+On reconnect, the bot re-subscribes to all active tokens and marks any missed ticks as a data gap in the log.
+
+
+
+5.2.3 FeedManager Class
+
+Field
+
+Details
+
+on_open(ws)
+
+Called on WebSocket connect. Subscribes initial token list. Logs connection event.
+
+on_tick(ws, message)
+
+Main tick handler. Parses message, normalises fields, routes to NIFTY/BANKNIFTY queues.
+
+on_error(ws, error)
+
+Logs error, increments error counter. Triggers reconnect if error count > threshold.
+
+on_close(ws)
+
+Logs disconnection. Schedules reconnect after 2 seconds. Pauses order placement.
+
+subscribe(tokens, mode)
+
+Builds subscription message and sends to WebSocket.
+
+unsubscribe(tokens)
+
+Removes tokens from live subscription.
+
+rebalance_subscriptions(spot_nifty, spot_bnf)
+
+Called every 5 minutes or on large spot move. Adjusts subscribed strikes.
+
+get_latest_tick(token)
+
+Returns last known tick for a token from in-memory cache.
+
+get_tick_history(token, n)
+
+Returns last n ticks from rolling buffer (used by strategies).
+
+
+
+5.3 Option Chain Manager
+
+The Option Chain Manager maintains a continuously updated, enriched option chain for both NIFTY and BANKNIFTY. It combines WebSocket tick data with periodic REST snapshots to provide a complete picture.
+
+
+
+5.3.1 OptionChain Data Structure
+
+For each instrument (NIFTY / BANKNIFTY) and each expiry, the Option Chain Manager maintains:
+
+OptionChain = {
+
+  instrument: 'NIFTY',
+
+  expiry: '27FEB2025',
+
+  spot: 22350.45,
+
+  atm_strike: 22350,
+
+  updated_at: datetime,
+
+  pcr_oi: 0.87,              # Put-Call Ratio (OI based)
+
+  pcr_volume: 0.91,          # Put-Call Ratio (Volume based)
+
+  total_call_oi: 12500000,
+
+  total_put_oi: 10875000,
+
+  iv_rank: 32.5,             # Current IV relative to 52-week range
+
+  iv_percentile: 40.2,
+
+  strikes: {
+
+    22350: {
+
+      CE: { ltp, bid, ask, iv, delta, gamma, theta, vega, oi, oi_change, volume },
+
+      PE: { ltp, bid, ask, iv, delta, gamma, theta, vega, oi, oi_change, volume }
+
+    },
+
+    ...
+
+  }
+
+}
+
+
+
+5.3.2 IV Rank Computation
+
+IV Rank = (Current IV - 52-week Low IV) / (52-week High IV - 52-week Low IV) × 100
+
+Computed for ATM strikes of both NIFTY and BANKNIFTY every 5 minutes.
+
+Stored in a rolling database table. Used by the risk manager to block buying when IV Rank > 50.
+
+IV Percentile (alternative): Percentage of days in the past year where IV was lower than current IV.
+
+
+
+5.4 Historical Data Manager
+
+Provides OHLCV candle data for technical analysis by strategies. Caches data in memory and refreshes at configurable intervals.
+
+Field
+
+Details
+
+get_candles(symbol, interval, from_date, to_date)
+
+Fetches historical candles from SmartAPI getCandleData(). Intervals: ONE_MINUTE, FIVE_MINUTE, FIFTEEN_MINUTE, ONE_HOUR, ONE_DAY.
+
+get_today_candles(symbol, interval)
+
+Returns all candles from 09:15 AM to now for today. Cached and updated on each new candle close.
+
+compute_vwap(candles)
+
+Computes VWAP for the current session. Used by momentum strategies.
+
+compute_supertrend(candles, atr_period, multiplier)
+
+Computes SuperTrend indicator for trend direction.
+
+compute_ema(candles, period)
+
+Exponential Moving Average computation.
+
+compute_rsi(candles, period=14)
+
+RSI for overbought/oversold detection. Used as signal filter.
+
+
+
+
+6. Module 4 — Greeks Engine
+
+The Greeks Engine is the analytical core of the options trading system. It computes all Black-Scholes option Greeks using live market data and provides critical filters for strike selection, entry viability assessment, and position risk quantification.
+
+
+
+6.1 Black-Scholes Implementation
+
+The engine implements the Black-Scholes-Merton model adapted for index options (continuous dividend yield approximation):
+
+d1 = [ln(S/K) + (r - q + 0.5σ²)T] / [σ√T]
+
+d2 = d1 - σ√T
+
+
+
+Call Price = S·e^(-qT)·N(d1) - K·e^(-rT)·N(d2)
+
+Put  Price = K·e^(-rT)·N(-d2) - S·e^(-qT)·N(-d1)
+
+
+
+Where: S=Spot, K=Strike, r=Risk-free rate (~6.5% India),
+
+       q=Dividend yield (~1.5% for NIFTY), T=Time to expiry (years),
+
+       σ=Implied Volatility, N()=Standard Normal CDF
+
+
+
+6.2 Greeks Definitions & Usage
+
+Greek
+
+Formula (simplified)
+
+Typical Range
+
+Bot Usage
+
+Delta (Δ)
+
+∂V/∂S = N(d1) for Call
+
+0.0 to 1.0 (CE), -1.0 to 0 (PE)
+
+Strike selection: target 0.25-0.50 Delta
+
+Gamma (Γ)
+
+∂Δ/∂S = N'(d1)/(S·σ·√T)
+
+Highest at ATM, near expiry
+
+Monitor gamma risk on 0DTE positions
+
+Theta (Θ)
+
+∂V/∂T (daily decay in ₹)
+
+Negative for option buyers
+
+Filter: daily theta < 3% of premium
+
+Vega (ν)
+
+∂V/∂σ = S·N'(d1)·√T
+
+Highest for ATM, longer expiry
+
+IV crush protection for event plays
+
+Rho (ρ)
+
+∂V/∂r
+
+Small for short-dated options
+
+Informational only, not used for filtering
+
+IV (σ)
+
+Implied from market price
+
+8% - 60% annualised for NIFTY
+
+Primary filter: IV Rank < 50 to buy
+
+
+
+6.3 Implied Volatility Extraction
+
+IV is not directly observable — it must be solved iteratively from the observed market price of the option:
+
+Method: Newton-Raphson numerical solver (converges in 5-10 iterations for reasonable market prices).
+
+Seed: The previous tick's IV is used as the initial guess to accelerate convergence.
+
+Bounds: IV is bounded between 0.01 (1%) and 5.0 (500%) to prevent solver divergence.
+
+Fallback: If Newton-Raphson fails to converge, Brent's method (bisection) is used as a fallback.
+
+Cache: IV values are cached with a 1-second TTL to avoid recomputation on every tick.
+
+
+
+6.4 Strike Viability Assessment
+
+Before any trade signal is acted upon, the Greeks Engine assesses whether the target strike is viable from a risk-reward perspective:
+
+Field
+
+Details
+
+Delta Filter
+
+MIN 0.20, MAX 0.55. Below 0.20 = too far OTM (lottery ticket). Above 0.55 = deep ITM (high premium, low leverage).
+
+Theta Filter
+
+Daily theta as % of premium must be below 3.0% for weekly expiry and below 1.5% for monthly expiry. Prevents entering options that decay too rapidly.
+
+IV Rank Filter
+
+IV Rank must be below 50 to buy options. Above 50 means IV is expensive relative to historical — unfavourable for buyers.
+
+Bid-Ask Spread Filter
+
+Spread as % of LTP must be below 3%. Wide spreads indicate illiquidity and cause adverse fills.
+
+Premium Range
+
+NIFTY options: ₹30 to ₹300 per unit. BANKNIFTY options: ₹50 to ₹600 per unit. Avoids junk sub-₹10 options and expensive deep-ITM options.
+
+Volume Filter
+
+Minimum 500 contracts traded in the current session before taking entry. Zero-volume options are rejected.
+
+Open Interest Filter
+
+Minimum 10,000 OI. Low OI indicates illiquid strike.
+
+
+
+6.5 Greeks Computation Performance
+
+All Greek computations use NumPy vectorised operations, processing the entire option chain (40+ strikes) in under 5 milliseconds.
+
+IV computation is the most expensive step (~15ms per chain). Results are cached per tick to avoid redundant computation.
+
+The engine processes Greeks for both NIFTY and BANKNIFTY concurrently using Python asyncio tasks.
+
+
+
+
+7. Module 5 — Signal Engine & Strategy Framework
+
+The Signal Engine is a pluggable strategy framework. Each strategy is an independent class that consumes enriched market data and produces a typed Signal object (or None). Multiple strategies can run simultaneously on each instrument.
+
+
+
+7.1 Signal Object Specification
+
+Field
+
+Details
+
+Field
+
+Description
+
+instrument
+
+NIFTY or BANKNIFTY
+
+direction
+
+CE (bullish) or PE (bearish)
+
+strike
+
+Selected strike price (integer)
+
+expiry
+
+Target expiry date string e.g. 27FEB2025
+
+tradingsymbol
+
+Full NFO symbol e.g. NIFTY27FEB2225500CE
+
+token
+
+Numeric token ID from instrument registry
+
+entry_ltp
+
+LTP at time of signal generation
+
+strategy_name
+
+Identifier of the generating strategy
+
+confidence
+
+Signal confidence score 0.0 to 1.0
+
+greeks
+
+Greeks object (delta, theta, gamma, vega, iv)
+
+rationale
+
+Human-readable reason string for logging/alerting
+
+generated_at
+
+Timestamp of signal generation
+
+valid_until
+
+Expiry time of signal (signals expire after 30 seconds if not executed)
+
+
+
+7.2 Base Strategy Interface
+
+class BaseStrategy(ABC):
+
+    name: str
+
+    instruments: List[str]    # ['NIFTY', 'BANKNIFTY']
+
+    enabled: bool
+
+
+
+    @abstractmethod
+
+    def generate_signal(self, snapshot: MarketSnapshot) -> Optional[Signal]:
+
+        ...
+
+
+
+    @abstractmethod
+
+    def should_exit(self, position: Position, snapshot: MarketSnapshot) -> Optional[ExitSignal]:
+
+        ...
+
+
+
+    def select_strike(self, spot, direction, moneyness='ATM') -> int:
+
+        ...  # Uses instrument registry
+
+
+
+7.3 Strategy 1: Momentum Breakout
+
+Concept
+
+Detects when the underlying index breaks above (bullish) or below (bearish) a significant intraday level with strong momentum, then buys the corresponding ATM option.
+
+Entry Conditions
+
+Breakout Detection: 5-minute candle close above the morning session high (9:15-10:00 AM range) with a body > 0.3% of the open price.
+
+Volume Confirmation: Breakout candle volume must be > 1.5x the 20-candle average volume.
+
+VWAP Alignment: For a CE signal, price must be above VWAP. For PE, price must be below VWAP.
+
+Trend Filter: 5-minute SuperTrend must be aligned with the signal direction.
+
+RSI: Between 45 and 70 for CE entry; between 30 and 55 for PE entry.
+
+Strike Selection
+
+Buys ATM or 1 strike OTM (if delta >= 0.30) to balance cost and leverage.
+
+Prefers options with 2-7 days to expiry for optimal leverage.
+
+Exit Conditions
+
+SL: 40% of premium paid.
+
+Target: 80% profit activates trailing SL at 50% profit from peak.
+
+Time exit: Square off by 3:15 PM if not already exited.
+
+Reversal exit: If price closes back inside the breakout range on a 5-minute candle.
+
+
+
+7.4 Strategy 2: OI Buildup (Open Interest Analysis)
+
+Concept
+
+Monitors Open Interest changes along with price movement to detect institutional directional positioning (long/short buildup or unwinding).
+
+Four OI Scenarios
+
+Pattern
+
+Price
+
+OI Change
+
+Interpretation
+
+Signal
+
+Long Buildup
+
+Rising ↑
+
+Rising ↑
+
+Fresh longs being added — bullish
+
+Buy CE
+
+Short Covering
+
+Rising ↑
+
+Falling ↓
+
+Shorts exiting, price squeezed up — bullish
+
+Buy CE
+
+Short Buildup
+
+Falling ↓
+
+Rising ↑
+
+Fresh shorts added — bearish
+
+Buy PE
+
+Long Unwinding
+
+Falling ↓
+
+Falling ↓
+
+Longs exiting, price falls — bearish
+
+Buy PE
+
+Signal Thresholds
+
+Price change threshold: > 0.25% on 15-minute candle.
+
+OI change threshold: > 5% change in the last 15 minutes.
+
+PCR cross: If PCR OI drops below 0.7 rapidly, signals extreme bullishness (CE signal).
+
+
+
+7.5 Strategy 3: PCR Contrarian Reversal
+
+Concept
+
+Put-Call Ratio extremes indicate market crowding on one side, which often precedes reversals. The bot takes contrarian positions when PCR reaches extreme levels.
+
+Field
+
+Details
+
+PCR < 0.7 (Extreme bullishness)
+
+Market is overly bullish — buy PE for mean reversion
+
+PCR > 1.5 (Extreme bearishness)
+
+Market is overly bearish — buy CE for mean reversion
+
+PCR Change Rate
+
+Rapid PCR movement (> 0.15 change in 30 min) is more significant than absolute level
+
+Confirmation
+
+Require price momentum to stall (Doji or Shooting Star candle pattern) before entry
+
+Filter
+
+Only trade PCR reversals between 10:30 AM and 2:00 PM (avoid morning extremes)
+
+
+
+7.6 Strategy 4: India VIX Mean Reversion
+
+Concept
+
+India VIX is a measure of expected 30-day volatility for NIFTY. When VIX spikes sharply, IV on options becomes inflated. The bot avoids buying during VIX spikes and instead looks for IV crush opportunities.
+
+VIX Spike Entry Block: If India VIX rises > 5% in a single session, the bot pauses new entries for both instruments.
+
+Post-Spike Play: After a VIX spike (VIX > 20), if VIX starts falling back, this signals IV crush — buy ATM straddles (both CE + PE) to benefit from the directional move that typically follows.
+
+VIX Data Source: India VIX token is available via SmartAPI as NSE:INDIA VIX. Subscribe in Mode 1 (LTP only).
+
+
+
+7.7 Strategy 5: Event-Driven Pre-Announcement Play
+
+Significant macro events cause reliable price swings. The bot identifies high-probability setups in the hours preceding and following major announcements.
+
+Event Type
+
+Timing
+
+Strategy
+
+Notes
+
+RBI Policy Meet
+
+Day before & day of
+
+Buy straddle 2 hrs before announcement
+
+IV spikes post-announcement
+
+Union Budget
+
+Budget day morning
+
+Wait for initial reaction, buy breakout direction
+
+High volatility, avoid opening 30 min
+
+US Fed Meeting
+
+Post-Fed night / next morning
+
+Buy in direction of US market move at 9:15
+
+Gap-and-go setup
+
+Quarterly Results (Nifty50 heavyweights)
+
+Day of results
+
+Avoid options for 30 min, then buy momentum
+
+Results-driven moves
+
+Global Market Crash
+
+Same day as global event
+
+Buy PE at any bounce
+
+VIX filter: only if VIX < 25
+
+
+
+7.8 Strategy 6: Opening Range Breakout (ORB)
+
+The Opening Range is defined as the High-Low range of the first 15 minutes (9:15 to 9:30 AM). A breakout above or below this range provides a reliable momentum signal for the rest of the session.
+
+Opening Range is computed from the first three 5-minute candles.
+
+Breakout is confirmed when a subsequent 5-minute candle closes outside the range by at least 0.2%.
+
+ATM or 1-OTM option in the breakout direction is purchased immediately after confirmation.
+
+Target: 2× the opening range width (in index points, converted to expected option premium move).
+
+
+
+7.9 Signal Aggregator & Conflict Resolution
+
+When multiple strategies simultaneously generate signals for the same instrument, the Signal Aggregator resolves conflicts:
+
+Field
+
+Details
+
+Same Direction Agreement
+
+If 2 or more strategies agree on CE or PE, signal confidence is boosted by 15% each. Entry is prioritised.
+
+Conflicting Signals
+
+If one strategy says CE and another says PE for the same instrument simultaneously, both signals are held for 5 minutes. If conflict persists, neither is executed.
+
+Priority Order
+
+OI Buildup > ORB > Momentum Breakout > PCR Reversal > Event Driven > VIX Mean Reversion.
+
+Cooldown Period
+
+After a losing trade on an instrument, that instrument's strategies are paused for 30 minutes.
+
+Instrument Isolation
+
+NIFTY and BANKNIFTY signals are processed completely independently. A bad NIFTY trade does not block BANKNIFTY signals.
+
+
+
+
+8. Module 6 — Risk Manager
+
+The Risk Manager is the most critical component of the entire system. It acts as the final gatekeeper before any order is placed, enforcing multiple layers of protection to prevent catastrophic losses. All risk parameters are configurable in settings.yaml.
+
+
+
+8.1 Risk Budget Architecture
+
+Risk is structured in a hierarchical budget system:
+
+Field
+
+Details
+
+Daily Loss Limit (Hard)
+
+₹10,000 total. Bot halts all activity when this is breached. No recovery until next trading day.
+
+Daily Loss Limit (Soft)
+
+₹7,000 total. Bot stops opening new positions but continues managing open ones.
+
+NIFTY Daily Budget
+
+₹5,000 max loss attributable to NIFTY trades.
+
+BANKNIFTY Daily Budget
+
+₹5,000 max loss attributable to BANKNIFTY trades.
+
+Per Trade Maximum Risk
+
+₹2,000. Maximum premium cost per individual trade entry.
+
+Maximum Open Positions
+
+4 total across both instruments (e.g., 2 NIFTY + 2 BANKNIFTY).
+
+Maximum Capital at Risk
+
+15% of total account value in open option premium at any time.
+
+Weekly Loss Limit
+
+₹30,000. If breached mid-week, bot pauses until next Monday.
+
+
+
+8.2 Pre-Trade Risk Checks
+
+Every Signal undergoes 12 sequential checks before approval. Any failure immediately rejects the trade:
+
+Check #
+
+Check Name
+
+Condition for PASS
+
+Action on FAIL
+
+1
+
+Market Hours
+
+Time between 09:20 and 15:20 IST
+
+Reject — outside trading hours
+
+2
+
+Daily Hard Limit
+
+Realised P&L > -₹10,000 for the day
+
+Halt bot — critical stop
+
+3
+
+Daily Soft Limit
+
+Realised P&L > -₹7,000 for the day
+
+Reject — stop new entries
+
+4
+
+Instrument Budget
+
+Instrument daily loss < instrument budget
+
+Reject — instrument limit reached
+
+5
+
+Open Position Count
+
+Total open positions < 4
+
+Reject — too many open trades
+
+6
+
+Same Instrument Limit
+
+Open positions for this instrument < 2
+
+Reject — instrument already full
+
+7
+
+Duplicate Signal
+
+No open position in same strike+expiry
+
+Reject — already in this trade
+
+8
+
+IV Rank
+
+IV Rank < 50 (configurable)
+
+Reject — options too expensive
+
+9
+
+Expiry Risk
+
+Days to expiry >= 1 (or time < 12:00 for 0DTE)
+
+Reject — expiry risk too high
+
+10
+
+Capital Check
+
+Sufficient margin available in account
+
+Reject — insufficient capital
+
+11
+
+VIX Spike Block
+
+India VIX 1-day change < 8%
+
+Reject — volatility spike
+
+12
+
+Event Block
+
+No blocked events configured for today
+
+Reject — event blackout period
+
+
+
+8.3 Position Sizing Algorithm
+
+def compute_position_size(signal, account_value, daily_loss_used):
+
+    # Maximum spend is the minimum of:
+
+    # 1. Per trade risk limit (₹2,000)
+
+    # 2. Remaining daily instrument budget
+
+    # 3. 2% of account value
+
+    max_spend = min(
+
+        PER_TRADE_RISK,
+
+        instrument_budget - daily_loss_used,
+
+        account_value * 0.02
+
+    )
+
+
+
+    lot_size   = registry.get_lot_size(signal.instrument)
+
+    premium    = signal.entry_ltp
+
+    cost_1_lot = premium * lot_size
+
+
+
+    lots = int(max_spend / cost_1_lot)
+
+    lots = max(1, min(lots, MAX_LOTS_PER_TRADE))  # 1 to 3 lots
+
+    return lots
+
+
+
+8.4 Margin Verification
+
+Before placing any order, the bot fetches live RMS (Risk Management System) data from AngelOne via getRMS().
+
+Available margin must exceed the estimated option premium cost plus a 20% buffer.
+
+The margin check is performed at the last possible moment (just before order placement) to get the most accurate available margin figure.
+
+
+
+8.5 Risk Configuration File
+
+# config/risk_config.yaml
+
+risk:
+
+  daily_hard_limit:     10000   # ₹ — bot halts
+
+  daily_soft_limit:     7000    # ₹ — no new entries
+
+  per_trade_risk:       2000    # ₹ — max premium per trade
+
+  max_open_positions:   4       # total across instruments
+
+  max_same_instrument:  2       # per instrument
+
+  max_lots_per_trade:   3
+
+  max_capital_pct:      0.15    # 15% of account in open premium
+
+  iv_rank_buy_threshold: 50     # don't buy if IV Rank > 50
+
+  min_delta:            0.20
+
+  max_delta:            0.55
+
+  max_theta_daily_pct:  3.0     # max % daily theta decay
+
+  min_strike_volume:    500     # minimum contracts traded today
+
+  min_strike_oi:        10000   # minimum open interest
+
+  max_bid_ask_spread_pct: 3.0   # max spread as % of LTP
+
+  no_trade_after:       '15:20' # IST
+
+  no_0dte_after:        '13:00' # IST
+
+
+
+
+9. Module 7 — Execution Engine
+
+The Execution Engine is responsible for the precise placement, modification, and cancellation of orders via AngelOne SmartAPI. It implements smart order routing, slippage management, and order lifecycle tracking.
+
+
+
+9.1 Order Types & Parameters
+
+Field
+
+Details
+
+Order Type
+
+LIMIT orders ONLY. Market orders are strictly prohibited for NFO due to severe slippage on illiquid strikes.
+
+Product Type
+
+INTRADAY (MIS). All option buys are treated as intraday margin products.
+
+Exchange
+
+NFO (NSE Futures & Options segment).
+
+Duration
+
+DAY. Orders are valid only for the current trading session.
+
+Transaction Type
+
+BUY for new positions. SELL for exits.
+
+Variety
+
+NORMAL for regular orders. ROBO for bracket orders (if configured).
+
+
+
+9.2 Smart Limit Price Computation
+
+Placing a LIMIT order too aggressively (at bid) risks non-execution. Placing too passively (above ask) causes overpayment. The execution engine uses a dynamic pricing model:
+
+def compute_limit_buy_price(bid, ask, ltp):
+
+    spread = ask - bid
+
+    spread_pct = spread / ltp * 100
+
+
+
+    if spread_pct < 1.0:
+
+        # Tight spread: pay ask price for immediate fill
+
+        return round_to_tick(ask)
+
+    elif spread_pct < 2.0:
+
+        # Medium spread: pay ask + 0.5% buffer
+
+        return round_to_tick(ask * 1.005)
+
+    else:
+
+        # Wide spread: pay mid + 20% of spread
+
+        mid = (bid + ask) / 2
+
+        return round_to_tick(mid + spread * 0.2)
+
+
+
+9.3 Order Placement Sequence
+
+Step 1 – Pre-Flight: Fetch fresh LTP using ltpData() REST call. Verify that the price has not moved more than 2% from signal price (stale signal check).
+
+Step 2 – Liquidity Check: Verify bid-ask spread is still within tolerance. Abort if spread has widened beyond threshold.
+
+Step 3 – Margin Final Check: Fetch getRMS() and verify available margin.
+
+Step 4 – Build Order: Construct order parameters with dynamically computed limit price.
+
+Step 5 – Submit Order: Call placeOrder() via SmartAPI. Capture order_id from response.
+
+Step 6 – Track Order: Register order_id in OrderTracker with status PENDING.
+
+Step 7 – Fill Confirmation: Poll orderBook() every 2 seconds for up to 30 seconds to confirm fill.
+
+Step 8 – Modify if Unfilled: If order not filled within 15 seconds, check LTP and modify order price upwards by 0.5% (max 2 modifications).
+
+Step 9 – Cancel if Still Unfilled: If not filled after 30 seconds, cancel order and log as missed opportunity.
+
+
+
+9.4 Exit Order Placement
+
+Field
+
+Details
+
+Normal Exit (Limit)
+
+Compute exit limit price as: bid price - 0.5% buffer (to ensure fill). Wait up to 20 seconds for execution.
+
+Urgent Exit (SL Hit)
+
+Place at bid price. If not filled in 5 seconds, escalate to market order.
+
+EOD Square-Off
+
+Place at bid - 1% for all open positions at 3:20 PM. Escalate to market if not filled by 3:25 PM.
+
+Forced Market Exit
+
+Used ONLY for EOD square-off or emergency. Places market order regardless of spread.
+
+
+
+9.5 Order Tracker & State Machine
+
+Each order transitions through the following states:
+
+CREATED → SUBMITTED → PENDING → PARTIAL_FILL → COMPLETE
+
+                          └─→ MODIFIED → PENDING
+
+                          └─→ CANCELLED
+
+                          └─→ REJECTED
+
+
+
+Field
+
+Details
+
+CREATED
+
+Order object built locally, not yet submitted to broker.
+
+SUBMITTED
+
+placeOrder() called successfully. order_id received.
+
+PENDING
+
+Order in broker system, awaiting fill. Polling active.
+
+PARTIAL_FILL
+
+Partially filled. Bot waits and continues polling.
+
+COMPLETE
+
+Fully filled. Position registered in PositionManager.
+
+MODIFIED
+
+modifyOrder() called to change price. Returns to PENDING.
+
+CANCELLED
+
+cancelOrder() called. Position NOT created. Signal logged as missed.
+
+REJECTED
+
+Broker rejected order (insufficient margin, invalid symbol, etc.). Alert sent.
+
+
+
+9.6 AngelOne SmartAPI Order Parameters — Full Specification
+
+Field
+
+Details
+
+variety
+
+NORMAL — used for all regular option buy orders.
+
+tradingsymbol
+
+Full NFO symbol string e.g. NIFTY27FEB2025CE22500. Built by InstrumentRegistry.build_tradingsymbol().
+
+symboltoken
+
+Numeric token ID from InstrumentRegistry. Required by SmartAPI.
+
+transactiontype
+
+BUY for entry, SELL for exit.
+
+exchange
+
+NFO for all options trades.
+
+ordertype
+
+LIMIT. Never MARKET for new entries.
+
+producttype
+
+INTRADAY (MIS product). Provides margin benefit and auto square-off by broker at 3:20 PM as a safety net.
+
+duration
+
+DAY. Order expires at end of session if unfilled.
+
+price
+
+Dynamically computed limit price. See Section 9.2.
+
+quantity
+
+lots × lot_size. E.g., 2 lots of NIFTY = 2 × 50 = 100 units.
+
+triggerprice
+
+0 for LIMIT orders. Non-zero only for SL orders.
+
+squareoff
+
+0 for non-bracket orders.
+
+stoploss
+
+0 for non-bracket orders. Bot manages SL programmatically.
+
+
+
+
+10. Module 8 — Position Manager & Exit Engine
+
+The Position Manager tracks every open option position in real-time, computing live P&L, monitoring exit conditions, and triggering exits when appropriate. It is the 'sell side' counterpart to the execution engine's 'buy side'.
+
+
+
+10.1 Position Object Specification
+
+Field
+
+Details
+
+position_id
+
+Unique UUID generated at entry
+
+instrument
+
+NIFTY or BANKNIFTY
+
+tradingsymbol
+
+NFO symbol string
+
+token
+
+Numeric token
+
+direction
+
+CE or PE
+
+strike
+
+Strike price
+
+expiry
+
+Expiry date
+
+entry_price
+
+Average fill price from broker confirmation
+
+entry_time
+
+Timestamp of fill
+
+lots
+
+Number of lots held
+
+lot_size
+
+50 for NIFTY, 15 for BANKNIFTY
+
+quantity
+
+lots × lot_size
+
+entry_greeks
+
+Greeks snapshot at time of entry
+
+sl_price
+
+Computed stop-loss price (entry_price × (1 - sl_pct))
+
+target_price
+
+Computed initial target price
+
+trailing_sl_active
+
+Boolean — whether trailing SL has been activated
+
+trailing_sl_price
+
+Current trailing SL level (moves up as profit grows)
+
+peak_price
+
+Highest LTP seen since entry (for trailing SL)
+
+current_ltp
+
+Latest tick price
+
+unrealised_pnl
+
+Live P&L = (current_ltp - entry_price) × quantity
+
+unrealised_pnl_pct
+
+P&L as % of entry cost
+
+status
+
+OPEN, EXITING, CLOSED
+
+strategy_name
+
+Which strategy generated this trade
+
+
+
+10.2 Exit Trigger Matrix — Complete Rules
+
+Exit Type
+
+Trigger Condition
+
+Exit Method
+
+Priority
+
+Hard Stop Loss
+
+LTP ≤ entry_price × (1 - 0.50)
+
+Urgent LIMIT at bid
+
+CRITICAL
+
+Soft Stop Loss (NIFTY)
+
+LTP ≤ entry_price × (1 - 0.40)
+
+LIMIT at bid
+
+HIGH
+
+Soft Stop Loss (BANKNIFTY)
+
+LTP ≤ entry_price × (1 - 0.45)
+
+LIMIT at bid
+
+HIGH
+
+Target Hit
+
+LTP ≥ entry_price × (1 + 1.00)
+
+Activate trailing SL at +70%
+
+HIGH
+
+Trailing SL
+
+LTP falls below peak × (1 - trail_pct)
+
+LIMIT at bid
+
+HIGH
+
+Time Exit
+
+Time ≥ 15:20 IST
+
+LIMIT, escalate to MARKET
+
+HIGH
+
+0DTE Time Exit
+
+0DTE position held after 13:00 IST
+
+Immediate LIMIT exit
+
+HIGH
+
+1DTE Exit
+
+Expiry tomorrow AND position in loss
+
+Exit at 14:00 IST
+
+MEDIUM
+
+Theta Bleed
+
+Daily theta > 5% of remaining premium
+
+Evaluate and exit if no catalyst
+
+MEDIUM
+
+Signal Reversal
+
+Strategy generates opposing signal for same instrument
+
+Exit at bid
+
+MEDIUM
+
+IV Spike Exit
+
+IV increases > 30% from entry IV (IV crush risk on event)
+
+Alert and evaluate
+
+LOW
+
+Manual Override
+
+Operator sends Telegram command /exit <position_id>
+
+Immediate LIMIT at bid
+
+CRITICAL
+
+
+
+10.3 Trailing Stop Loss Logic
+
+def update_trailing_sl(position, current_ltp):
+
+    pnl_pct = (current_ltp - position.entry_price) / position.entry_price
+
+
+
+    # Activate trailing SL when profit reaches 100%
+
+    if pnl_pct >= 1.00 and not position.trailing_sl_active:
+
+        position.trailing_sl_active = True
+
+        position.trailing_sl_price = position.entry_price * 1.70  # Lock 70%
+
+        alert('Trailing SL activated at +70% profit')
+
+
+
+    if position.trailing_sl_active:
+
+        # Update peak price
+
+        position.peak_price = max(position.peak_price, current_ltp)
+
+
+
+        # Trail SL at 30% below peak
+
+        new_sl = position.peak_price * 0.70
+
+        if new_sl > position.trailing_sl_price:
+
+            position.trailing_sl_price = new_sl
+
+
+
+        # Trigger exit
+
+        if current_ltp <= position.trailing_sl_price:
+
+            return ExitSignal('TRAILING_SL', current_ltp)
+
+
+
+10.4 Position Monitoring Loop
+
+The position monitor runs as an async task polling every 500 milliseconds:
+
+For each open position, retrieve the latest tick from the FeedManager cache.
+
+Run all exit checks in priority order (Hard SL first, then soft SL, target, trailing SL, time exits, theta, signal reversal).
+
+If any exit condition is triggered, immediately call ExecutionEngine.place_exit_order().
+
+Update position's current_ltp, unrealised_pnl, unrealised_pnl_pct, and peak_price on every cycle.
+
+Persist the updated position snapshot to the database every 10 seconds.
+
+
+
+
+11. Module 9 — Portfolio Manager
+
+The Portfolio Manager maintains a real-time view of the account state, including all open positions, realised P&L, daily statistics, and capital utilisation. It is the single source of truth for account status across the entire bot.
+
+
+
+11.1 Portfolio State
+
+Field
+
+Details
+
+open_positions
+
+Dict of position_id → Position objects for all active trades
+
+closed_positions_today
+
+List of all positions closed today (win/loss/flat)
+
+realised_pnl_today
+
+Total confirmed P&L from closed positions today
+
+unrealised_pnl
+
+Sum of live P&L across all open positions
+
+total_pnl_today
+
+realised + unrealised
+
+nifty_pnl
+
+P&L attributed to NIFTY trades only
+
+banknifty_pnl
+
+P&L attributed to BANKNIFTY trades only
+
+premium_deployed
+
+Total option premium currently at risk in open positions
+
+account_value
+
+Net worth from last getRMS() call
+
+available_margin
+
+Available cash from last getRMS() call
+
+daily_trade_count
+
+Number of trades taken today
+
+daily_win_count
+
+Number of winning trades today
+
+win_rate_today
+
+Win count / total closed count
+
+
+
+11.2 P&L Reconciliation
+
+Every 5 minutes during market hours, the bot calls getPosition() from SmartAPI to reconcile local position state with broker records.
+
+Any discrepancy between local position quantity and broker position quantity triggers an immediate alert and reconciliation process.
+
+At EOD, the bot calls getTradeBook() to fetch the complete trade record and stores it in the database.
+
+
+
+11.3 Performance Metrics
+
+The Portfolio Manager computes the following performance metrics in real-time:
+
+Metric
+
+Formula
+
+Usage
+
+Win Rate
+
+Winning trades / Total closed trades × 100
+
+Strategy assessment
+
+Average R:R
+
+Average winner / Average loser (absolute)
+
+Strategy quality
+
+Profit Factor
+
+Gross profit / Gross loss
+
+System viability (target > 1.5)
+
+Max Drawdown
+
+Peak P&L - Trough P&L (today)
+
+Risk assessment
+
+Avg Premium Paid
+
+Total premium / Trade count
+
+Capital efficiency
+
+Strike Hit Rate
+
+Trades reaching 50%+ profit / Total
+
+Entry quality
+
+
+
+
+12. Module 10 — Monitoring, Alerting & Dashboard
+
+
+
+12.1 Telegram Alert System
+
+The bot sends real-time structured notifications via a Telegram Bot for all critical events. Each alert type has a standardised format for easy reading on mobile.
+
+
+
+12.1.1 Alert Event Types
+
+Event
+
+Trigger
+
+Alert Level
+
+Trade Entry
+
+Order fully filled
+
+INFO 🟢
+
+Trade Exit — Profit
+
+Position closed with profit
+
+SUCCESS ✅
+
+Trade Exit — Loss
+
+Position closed with SL
+
+WARN 🔴
+
+Trailing SL Activated
+
+Profit crosses 100%
+
+INFO 📈
+
+Daily Soft Limit Hit
+
+Daily loss > ₹7,000
+
+WARN ⚠️
+
+Daily Hard Limit Hit
+
+Daily loss > ₹10,000
+
+CRITICAL 🚨
+
+Order Rejected
+
+Broker rejected order
+
+ERROR ❌
+
+WebSocket Disconnect
+
+Feed connection lost
+
+ERROR ❌
+
+Session Expired
+
+JWT token invalid
+
+CRITICAL 🚨
+
+Signal Generated
+
+New signal (configurable)
+
+INFO 🔔
+
+Morning Startup
+
+Bot initialised at 9:00 AM
+
+INFO 🤖
+
+EOD Summary
+
+Daily report at 3:35 PM
+
+REPORT 📊
+
+
+
+12.1.2 Trade Entry Alert Format
+
+🟢 NEW TRADE — NIFTY
+
+━━━━━━━━━━━━━━━━━━━━━
+
+Symbol  : NIFTY27FEB2025CE22500
+
+Type    : CALL (CE)
+
+Strike  : 22500  |  Expiry: 27FEB2025
+
+Lots    : 2  |  Qty: 100
+
+Premium : ₹85.50  |  Cost: ₹8,550
+
+Delta   : 0.38   |  IV: 12.4%
+
+IV Rank : 28     |  Theta/day: ₹32
+
+Strategy: Momentum Breakout
+
+SL Level: ₹42.75 (−50%)
+
+Target  : ₹171.00 (+100%)
+
+Time    : 10:34:52 IST
+
+
+
+12.1.3 EOD Summary Alert Format
+
+📊 DAILY SUMMARY — 27 Feb 2025
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Trades  : 5 (3 Closed, 0 Open)
+
+Realised P&L  : +₹3,420
+
+  NIFTY P&L   : +₹2,100
+
+  BNKFY P&L   : +₹1,320
+
+Win Rate      : 67% (2W / 1L)
+
+Best Trade    : NIFTY CE +₹2,800 (+110%)
+
+Worst Trade   : BNKFY PE −₹680 (−40% SL)
+
+Avg Premium   : ₹4,900 per trade
+
+Capital Used  : ₹14,700 (peak)
+
+Margin Left   : ₹85,300
+
+IV Rank @ EOD : NIFTY 31 | BNKFY 28
+
+
+
+12.2 Telegram Command Interface
+
+The bot accepts commands from authorised Telegram users (verified by chat ID):
+
+Field
+
+Details
+
+/status
+
+Show all open positions with live P&L
+
+/positions
+
+Detailed view of each open position including Greeks
+
+/pnl
+
+Today's realised + unrealised P&L summary
+
+/exit <position_id>
+
+Manually close a specific position
+
+/exitall
+
+Emergency square-off of all open positions
+
+/pause
+
+Pause new signal generation (keep monitoring active)
+
+/resume
+
+Resume signal generation after pause
+
+/risk
+
+Show current risk budget usage
+
+/vix
+
+Show current India VIX and IV Rank for NIFTY and BANKNIFTY
+
+/chain NIFTY
+
+Show live option chain summary for NIFTY
+
+/chain BANKNIFTY
+
+Show live option chain summary for BANKNIFTY
+
+/health
+
+Bot health check — WebSocket status, API latency, last tick time
+
+
+
+12.3 Streamlit Live Dashboard
+
+A real-time web dashboard built with Streamlit provides a visual monitoring interface accessible from any browser:
+
+Live Positions Panel: Table showing all open positions with real-time P&L, SL distance, and time held.
+
+P&L Chart: Intraday P&L curve updating every 5 seconds.
+
+Option Chain Heatmap: Visual option chain showing IV, OI, and delta across strikes for both NIFTY and BANKNIFTY.
+
+Greeks Dashboard: Delta exposure, net theta per day, vega sensitivity across all open positions.
+
+Trade Log: Today's closed trades with entry/exit prices, P&L, and reason.
+
+Risk Gauges: Visual gauges for daily P&L vs limits, open position count, capital utilisation.
+
+VIX Tracker: India VIX chart for the current session with IV Rank for both instruments.
+
+
+
+
+13. Module 11 — Data Storage & Persistence
+
+
+
+13.1 Database Schema
+
+The bot uses SQLite for development and PostgreSQL for production. The schema consists of six core tables:
+
+
+
+13.1.1 trades Table
+
+CREATE TABLE trades (
+
+  id              TEXT PRIMARY KEY,  -- UUID
+
+  instrument      TEXT NOT NULL,     -- NIFTY / BANKNIFTY
+
+  tradingsymbol   TEXT NOT NULL,
+
+  direction       TEXT NOT NULL,     -- CE / PE
+
+  strike          INTEGER NOT NULL,
+
+  expiry          TEXT NOT NULL,
+
+  lots            INTEGER NOT NULL,
+
+  quantity        INTEGER NOT NULL,
+
+  entry_price     REAL NOT NULL,
+
+  entry_time      TIMESTAMP NOT NULL,
+
+  exit_price      REAL,
+
+  exit_time       TIMESTAMP,
+
+  exit_reason     TEXT,
+
+  realised_pnl    REAL,
+
+  entry_delta     REAL,
+
+  entry_iv        REAL,
+
+  entry_iv_rank   REAL,
+
+  strategy_name   TEXT,
+
+  order_id_entry  TEXT,
+
+  order_id_exit   TEXT,
+
+  status          TEXT DEFAULT 'OPEN'
+
+);
+
+
+
+13.1.2 Other Tables
+
+Field
+
+Details
+
+iv_history
+
+Stores daily ATM IV and IV Rank for NIFTY and BANKNIFTY. Used for IV Rank computation.
+
+daily_pnl
+
+Daily summary: date, trade count, win count, gross profit, gross loss, net pnl.
+
+tick_log
+
+Optional high-resolution tick storage. Configurable — disabled by default to save disk space.
+
+signals_log
+
+All generated signals including rejected ones. Useful for backtesting strategy effectiveness.
+
+order_log
+
+Complete order lifecycle log with timestamps for each state transition.
+
+
+
+
+14. Module 12 — Backtesting Engine
+
+The backtesting engine replays historical market data through the strategy and risk modules to validate performance before live deployment.
+
+
+
+14.1 Data Requirements
+
+Minute-level OHLCV data for NIFTY and BANKNIFTY spot indices.
+
+End-of-day option chain data (OI, IV, LTP per strike) from NSE bhavcopy files.
+
+India VIX daily data from NSE website.
+
+NSE holiday calendar for accurate expiry date computation.
+
+
+
+14.2 Backtester Architecture
+
+Field
+
+Details
+
+DataLoader
+
+Loads and preprocesses historical CSVs into in-memory DataFrames. Builds synthetic option chains using Black-Scholes when market data is unavailable for specific strikes.
+
+EventSimulator
+
+Replays market events in chronological order. Emits tick events that are consumed by the strategy modules — identical to live trading.
+
+SimulatedExecutionEngine
+
+Fills buy orders at ask + slippage model. Fills sell orders at bid - slippage. Applies realistic fill assumptions.
+
+PerformanceAnalyzer
+
+Computes comprehensive metrics: total return, Sharpe ratio, max drawdown, win rate, profit factor, average trade duration, best/worst month.
+
+ReportGenerator
+
+Produces an Excel report with equity curve, trade log, monthly P&L heatmap, and drawdown chart.
+
+
+
+14.3 Backtesting Assumptions & Limitations
+
+Slippage Model: Buy orders filled at ask + 0.5% slippage. Sell orders at bid - 0.3% slippage.
+
+Brokerage Costs: ₹20 per executed order (AngelOne flat fee) + STT + exchange charges (approximately 0.05% of premium).
+
+IV Assumption: When tick-level IV is unavailable, IV is interpolated from daily OHLCV of NIFTY VIX.
+
+Survivorship Bias: Option chain data must include delisted/expired contracts to avoid survivorship bias.
+
+Look-Ahead Bias Prevention: All indicators are computed strictly on past data. No future values leak into decisions.
+
+
+
+
+15. Error Handling, Fault Tolerance & Recovery
+
+
+
+15.1 Error Categories
+
+Category
+
+Examples
+
+Severity
+
+Recovery Action
+
+API Errors
+
+Rate limit (429), Invalid token (401), Server error (500)
+
+HIGH
+
+Retry with exponential backoff (2s, 4s, 8s). Alert on 3rd failure.
+
+WebSocket Errors
+
+Connection dropped, heartbeat timeout, decode error
+
+HIGH
+
+Immediate reconnect. Re-subscribe all tokens. Pause orders until reconnected.
+
+Order Errors
+
+Order rejected, Invalid symbol, Insufficient margin
+
+MEDIUM
+
+Log error, skip this signal. Alert via Telegram.
+
+Data Errors
+
+Missing tick data, Stale price, NaN in Greeks
+
+MEDIUM
+
+Use last valid tick. Log gap. Skip signals with stale data.
+
+Strategy Errors
+
+Exception in strategy code
+
+LOW
+
+Catch exception, disable that strategy, alert. Other strategies continue.
+
+Position Discrepancy
+
+Local position != broker position
+
+CRITICAL
+
+Halt new entries. Reconcile via getPosition(). Alert operator.
+
+Session Expiry
+
+JWT token expired mid-session
+
+CRITICAL
+
+Trigger immediate re-login. Resume after re-auth. Log downtime.
+
+EOD Failure
+
+Square-off order not filled by 3:25 PM
+
+CRITICAL
+
+Escalate to market order. Alert immediately.
+
+
+
+15.2 Circuit Breakers
+
+API Call Rate Limiter: AngelOne SmartAPI allows 10 requests/second on REST. The bot implements a token-bucket rate limiter to stay within limits.
+
+Order Flood Prevention: Maximum 3 orders per minute. If more than 3 order attempts happen in 60 seconds, the execution engine is paused for 2 minutes.
+
+Runaway Trade Prevention: If more than 8 trades are executed in a single day, a human confirmation via Telegram is required for further trades.
+
+Negative Premium Detection: If a computed limit price is zero or negative (data anomaly), the order is aborted immediately.
+
+
+
+15.3 Startup Sequence & Health Checks
+
+Every morning at 08:30 AM, the bot runs a pre-market startup sequence:
+
+Download and parse latest instrument master from AngelOne.
+
+Verify API credentials and generate session tokens.
+
+Load and validate risk configuration from YAML file.
+
+Fetch previous day's trade log from broker and reconcile with local database.
+
+Compute overnight IV Rank updates for NIFTY and BANKNIFTY.
+
+Build option chain token lists for the day's expiries.
+
+Test WebSocket connection and verify tick receipt for at least one token.
+
+Send startup health report via Telegram.
+
+Begin live trading at 09:20 AM (5 minutes after market open to avoid opening volatility).
+
+
+
+
+16. Deployment Architecture
+
+
+
+16.1 Infrastructure Requirements
+
+Field
+
+Details
+
+Compute
+
+VPS or dedicated server in Mumbai, India (co-located with NSE). Minimum 2 vCPU, 4GB RAM, 50GB SSD.
+
+Operating System
+
+Ubuntu 22.04 LTS. Python 3.11+.
+
+Network
+
+Low-latency internet connection with < 10ms ping to AngelOne servers. Use a datacenter connection, not home broadband.
+
+Process Manager
+
+Supervisord or systemd to auto-restart bot on crash. Configures restart limits to prevent infinite crash loops.
+
+Time Synchronisation
+
+NTP sync to IST (UTC+5:30). Critical for TOTP generation and order timestamping.
+
+Backup
+
+Daily database backup to cloud storage (S3 or similar). Configuration files backed up to private Git repository.
+
+
+
+16.2 Project Directory Structure
+
+options-bot/
+
+├── config/
+
+│   ├── settings.yaml       # All non-secret configuration
+
+│   ├── risk_config.yaml    # Risk parameters
+
+│   ├── strategies.yaml     # Strategy enable/disable + params
+
+│   ├── instruments.yaml    # NIFTY/BANKNIFTY specs
+
+│   └── events.yaml         # Event blackout calendar
+
+├── core/
+
+│   ├── session_manager.py
+
+│   ├── instrument_registry.py
+
+│   ├── feed_manager.py
+
+│   ├── option_chain_manager.py
+
+│   ├── historical_data.py
+
+│   ├── greeks_engine.py
+
+│   ├── risk_manager.py
+
+│   ├── execution_engine.py
+
+│   ├── position_manager.py
+
+│   └── portfolio_manager.py
+
+├── strategies/
+
+│   ├── base_strategy.py
+
+│   ├── signal_aggregator.py
+
+│   ├── momentum_breakout.py
+
+│   ├── oi_buildup.py
+
+│   ├── pcr_reversal.py
+
+│   ├── vix_mean_revert.py
+
+│   ├── event_driven.py
+
+│   └── opening_range_breakout.py
+
+├── monitoring/
+
+│   ├── telegram_alerter.py
+
+│   ├── telegram_commands.py
+
+│   └── dashboard.py         # Streamlit app
+
+├── storage/
+
+│   ├── database.py          # SQLAlchemy models
+
+│   ├── trade_repository.py
+
+│   └── iv_repository.py
+
+├── backtester/
+
+│   ├── data_loader.py
+
+│   ├── event_simulator.py
+
+│   ├── simulated_execution.py
+
+│   └── performance_analyzer.py
+
+├── utils/
+
+│   ├── logger.py
+
+│   ├── rate_limiter.py
+
+│   ├── market_calendar.py
+
+│   └── symbol_builder.py
+
+├── main.py                  # Bot entry point
+
+├── requirements.txt
+
+├── .env                     # Secrets (gitignored)
+
+└── supervisord.conf         # Process manager config
+
+
+
+16.3 Key Python Dependencies
+
+Package
+
+Version
+
+Purpose
+
+smartapi-python
+
+latest
+
+Official AngelOne SmartAPI client
+
+pyotp
+
+2.9+
+
+TOTP generation for 2FA login
+
+websocket-client
+
+1.7+
+
+WebSocket connection management
+
+pandas
+
+2.0+
+
+Option chain analysis, data manipulation
+
+numpy
+
+1.26+
+
+Vectorised Greeks computation
+
+scipy
+
+1.12+
+
+Normal CDF/PDF for Black-Scholes
+
+py_vollib
+
+1.0+
+
+Black-Scholes IV solver
+
+python-telegram-bot
+
+21.0+
+
+Telegram alerts and command handling
+
+APScheduler
+
+3.10+
+
+Scheduled tasks (EOD, startup, reports)
+
+SQLAlchemy
+
+2.0+
+
+Database ORM
+
+PyYAML
+
+6.0+
+
+Configuration file parsing
+
+python-dotenv
+
+1.0+
+
+Environment variable loading
+
+streamlit
+
+1.32+
+
+Live monitoring dashboard
+
+structlog
+
+24.0+
+
+Structured JSON logging
+
+
+
+
+17. Complete Configuration Reference
+
+
+
+17.1 settings.yaml — Full Reference
+
+# config/settings.yaml
+
+
+
+market:
+
+  open_time:          '09:15'
+
+  bot_start_time:     '09:20'     # 5 min delay after open
+
+  no_new_entry_after: '15:20'
+
+  square_off_time:    '15:20'
+
+  eod_report_time:    '15:35'
+
+  timezone:           'Asia/Kolkata'
+
+
+
+instruments:
+
+  nifty:
+
+    lot_size:            50
+
+    strike_interval:     50
+
+    weekly_expiry_day:   'Thursday'
+
+    atm_strikes_range:   5      # +/- 5 strikes from ATM
+
+    min_premium:         30
+
+    max_premium:         300
+
+  banknifty:
+
+    lot_size:            15
+
+    strike_interval:     100
+
+    weekly_expiry_day:   'Wednesday'
+
+    atm_strikes_range:   5
+
+    min_premium:         50
+
+    max_premium:         600
+
+
+
+strategies:
+
+  momentum_breakout:
+
+    enabled:             true
+
+    instruments:         ['NIFTY', 'BANKNIFTY']
+
+    candle_interval:     'FIVE_MINUTE'
+
+    volume_multiplier:   1.5
+
+    price_change_min:    0.003
+
+  oi_buildup:
+
+    enabled:             true
+
+    instruments:         ['NIFTY', 'BANKNIFTY']
+
+    oi_change_threshold: 5.0    # percent
+
+    price_change_min:    0.25   # percent
+
+  pcr_reversal:
+
+    enabled:             true
+
+    pcr_bull_threshold:  0.70
+
+    pcr_bear_threshold:  1.50
+
+  opening_range_breakout:
+
+    enabled:             true
+
+    range_minutes:       15
+
+    breakout_buffer_pct: 0.002
+
+
+
+17.2 Dual-Instrument Concurrent Processing
+
+A key architectural feature is the simultaneous, independent processing of NIFTY and BANKNIFTY. The following design decisions support this:
+
+Separate Queues: FeedManager maintains two independent asyncio Queues — nifty_queue and banknifty_queue. Ticks are routed to the appropriate queue based on the instrument token.
+
+Parallel Processing Tasks: Two asyncio tasks run concurrently — process_nifty_ticks() and process_banknifty_ticks() — consuming from their respective queues.
+
+Independent Risk Budgets: NIFTY and BANKNIFTY each have their own daily loss budget. A bad run on one does not immediately block the other.
+
+Shared Capital Pool: While budgets are tracked independently, the total capital and position count limits are shared across both instruments.
+
+Isolated Signal Aggregators: Each instrument has its own SignalAggregator instance, so a signal conflict on NIFTY has no effect on BANKNIFTY signal processing.
+
+Concurrent Order Placement: asyncio.gather() allows simultaneous order placement for NIFTY and BANKNIFTY without one blocking the other.
+
+
+
+
+18. Main Event Loop — Complete Pseudocode
+
+
+
+async def main():
+
+    # ── Startup ──────────────────────────────────────────────────
+
+    session  = SessionManager()
+
+    await session.login()
+
+    registry = InstrumentRegistry()
+
+    await registry.load_master()
+
+    feed     = FeedManager(session)
+
+    chain_mgr = OptionChainManager(registry)
+
+    greeks   = GreeksEngine()
+
+    risk     = RiskManager(config.risk)
+
+    executor = ExecutionEngine(session.api)
+
+    pos_mgr  = PositionManager(executor)
+
+    portfolio = PortfolioManager()
+
+    alerter  = TelegramAlerter()
+
+
+
+    strategies = [MomentumBreakout(), OIBuildup(),
+
+                  PCRReversal(), OpeningRangeBreakout(),
+
+                  EventDriven()]
+
+
+
+    nifty_agg  = SignalAggregator('NIFTY', strategies)
+
+    bnf_agg    = SignalAggregator('BANKNIFTY', strategies)
+
+
+
+    await feed.connect()
+
+    await feed.subscribe_all_tokens(registry)
+
+    await alerter.send_startup_report()
+
+
+
+    # ── Main Loop ────────────────────────────────────────────────
+
+    async def process_instrument(instrument, aggregator):
+
+        queue = feed.get_queue(instrument)
+
+        async for tick in queue:
+
+            # Update option chain with new tick
+
+            chain_mgr.update(instrument, tick)
+
+            snapshot = chain_mgr.get_snapshot(instrument)
+
+
+
+            # Recompute Greeks for ATM +/- 3 strikes
+
+            greeks.refresh(snapshot)
+
+
+
+            # Check exit conditions for open positions
+
+            for pos in portfolio.get_open(instrument):
+
+                exit_sig = pos_mgr.check_exit(pos, tick)
+
+                if exit_sig:
+
+                    order = await executor.exit(pos, exit_sig)
+
+                    portfolio.close_position(pos, order)
+
+                    await alerter.on_exit(pos, exit_sig)
+
+
+
+            # Generate new signals
+
+            signal = aggregator.evaluate(snapshot)
+
+            if signal:
+
+                approval = risk.approve(signal, portfolio)
+
+                if approval.ok:
+
+                    lots  = risk.size(signal, portfolio)
+
+                    order = await executor.buy(signal, lots)
+
+                    if order.status == 'COMPLETE':
+
+                        portfolio.open_position(order, signal)
+
+                        await alerter.on_entry(order, signal)
+
+
+
+    # ── Run NIFTY and BANKNIFTY concurrently ─────────────────────
+
+    await asyncio.gather(
+
+        process_instrument('NIFTY',     nifty_agg),
+
+        process_instrument('BANKNIFTY', bnf_agg),
+
+        pos_mgr.monitoring_loop(),       # 500ms position check loop
+
+        feed.heartbeat_loop(),            # WebSocket keepalive
+
+        scheduler.run_eod_tasks()         # 3:20 PM square-off
+
+    )
+
+
+
+asyncio.run(main())
+
+
+
+NOTE: The NIFTY and BANKNIFTY processing pipelines run as concurrent asyncio tasks within a single Python process. This avoids the overhead of multiprocessing while achieving effective concurrency through the async I/O model — appropriate since the bot is I/O-bound (waiting on network ticks), not CPU-bound.
+
+
+
+
+19. Security & Compliance Checklist
+
+
+
+Item
+
+Requirement
+
+Implementation
+
+API Key Storage
+
+Never hardcode credentials
+
+.env file, gitignored, environment variables
+
+TOTP Secret
+
+Store securely
+
+.env file with file permissions 600
+
+Git Repository
+
+No secrets in commits
+
+.gitignore covers .env, *.key, *.pem
+
+Telegram Auth
+
+Only authorised users can send commands
+
+Chat ID whitelist validation on every command
+
+Order Limits
+
+Prevent runaway orders
+
+Rate limiter + daily order count hard cap
+
+Capital Protection
+
+Hard broker-level limits
+
+Intraday MIS product auto-squares off
+
+Logging
+
+No credentials in logs
+
+Structured logging with sensitive field masking
+
+SEBI Compliance
+
+Algo trading registration
+
+Ensure algo is registered per SEBI circular SEBI/HO/MRD/MRD-PoD-3/P/CIR/2021/658
+
+
+
+NOTE: SEBI requires algorithmic trading systems to be registered with the respective stock exchange (NSE) and broker. Ensure your trading activity complies with SEBI's algo trading regulations before deploying this system in live markets.
+
+
+
+20. Summary & Glossary
+
+
+
+20.1 Key Abbreviations
+
+Field
+
+Details
+
+ATM
+
+At The Money — strike price nearest to current spot
+
+OTM
+
+Out of The Money — strike above (for CE) or below (for PE) spot price
+
+ITM
+
+In The Money — strike with intrinsic value
+
+CE
+
+Call Option (European) — profits when underlying rises
+
+PE
+
+Put Option (European) — profits when underlying falls
+
+OI
+
+Open Interest — total outstanding contracts not yet settled
+
+PCR
+
+Put-Call Ratio — ratio of Put OI to Call OI
+
+IV
+
+Implied Volatility — market's expectation of future volatility
+
+IV Rank
+
+Current IV position within its 52-week high-low range (0-100)
+
+0DTE
+
+Zero Days To Expiry — options expiring today
+
+VIX
+
+Volatility Index — India VIX measures NIFTY option implied volatility
+
+SL
+
+Stop Loss — pre-defined price at which a losing position is exited
+
+MIS
+
+Margin Intraday Square-off — intraday product type on NSE
+
+NFO
+
+NSE Futures & Options segment
+
+RMS
+
+Risk Management System — broker's margin and exposure data
+
+TOTP
+
+Time-based One-Time Password — used for AngelOne 2FA login
+
+	Confidential — Internal Use Only	Page
