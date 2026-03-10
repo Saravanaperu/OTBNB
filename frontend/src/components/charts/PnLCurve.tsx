@@ -10,13 +10,8 @@ export function PnLCurve() {
 
   const currentNetPnL = positions.reduce((acc, p) => acc + (p.unrealised_pnl || 0), 0);
 
-  // Mock history array leading up to currentNetPnL
-  const mockHistory = [
-     { time: '09:15', pnl: currentNetPnL * 0.1 },
-     { time: '09:30', pnl: currentNetPnL * -0.2 },
-     { time: '10:00', pnl: currentNetPnL * 0.4 },
-     { time: '10:30', pnl: currentNetPnL * 0.8 },
-     { time: '11:00', pnl: currentNetPnL },
+  const curveHistory = [
+     { time: 'Now', pnl: currentNetPnL },
   ];
 
   return (
@@ -33,7 +28,7 @@ export function PnLCurve() {
 
       <div className="flex-1 w-full relative">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={mockHistory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+          <AreaChart data={curveHistory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorPnL" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={currentNetPnL >= 0 ? '#22c55e' : '#ef4444'} stopOpacity={0.3}/>
