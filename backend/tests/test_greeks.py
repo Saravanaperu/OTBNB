@@ -58,7 +58,7 @@ def test_greeks_engine_zero_dte():
             "token": "12345",
             "ltp": 150.0,
             "strike": 22000,
-            "option_type": "CE"
+            "option_type": "c"
         }
     }
 
@@ -73,7 +73,7 @@ def test_greeks_engine_invalid_data():
             "token": "12345",
             "ltp": None,
             "strike": 22000,
-            "option_type": "CE"
+            "option_type": "c"
         }
     }
 

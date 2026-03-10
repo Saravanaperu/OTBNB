@@ -20,10 +20,10 @@ async def run_simulation():
 
     # Simulate ticks
     ticks = [
-        {"token": "100", "ltp": 50.0, "strike": 22000, "option_type": "CE"},
-        {"token": "200", "ltp": 45.0, "strike": 22000, "option_type": "PE"},
-        {"token": "100", "ltp": 55.0, "strike": 22000, "option_type": "CE"},
-        {"token": "200", "ltp": 40.0, "strike": 22000, "option_type": "PE"}
+        {"token": "100", "ltp": 50.0, "strike": 22000, "option_type": "c"},
+        {"token": "200", "ltp": 45.0, "strike": 22000, "option_type": "p"},
+        {"token": "100", "ltp": 55.0, "strike": 22000, "option_type": "c"},
+        {"token": "200", "ltp": 40.0, "strike": 22000, "option_type": "p"}
     ]
 
     for tick in ticks:

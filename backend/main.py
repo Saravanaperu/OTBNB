@@ -45,11 +45,11 @@ bot_state = {
 def get_bot_state():
     return bot_state
 
-app.include_router(api_router, prefix="/api/v1")
-app.include_router(ws_router, prefix="/ws")
+from contextlib import asynccontextmanager
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
     logger.info("Starting up FastAPI application...")
     bot_state["session_manager"] = SessionManager()
 
@@ -72,11 +72,17 @@ async def startup_event():
     # bot_state["session_manager"].login()
     bot_state["status"] = "INITIALIZED"
 
-@app.on_event("shutdown")
-async def shutdown_event():
+    yield
+
+    # Shutdown
     logger.info("Shutting down FastAPI application...")
     if bot_state["session_manager"]:
         bot_state["session_manager"].logout()
+
+app.router.lifespan_context = lifespan
+
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(ws_router, prefix="/ws")
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host=settings.backend_host, port=settings.backend_port, reload=True)
