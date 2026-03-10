@@ -25,6 +25,7 @@ export function OptionChain() {
             {instruments.map(inst => (
               <button
                 key={inst}
+                aria-label={`Select ${inst} option chain`}
                 className={clsx(
                   "btn btn-outline text-sm",
                   selectedInstrument === inst && "bg-primary text-white border-primary"
@@ -63,6 +64,7 @@ export function OptionChain() {
           {instruments.map(inst => (
             <button
               key={inst}
+              aria-label={`Select ${inst} option chain`}
               className={clsx(
                 "btn btn-outline text-sm",
                 selectedInstrument === inst && "bg-primary text-white border-primary"
