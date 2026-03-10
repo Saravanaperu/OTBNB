@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from backend.config.settings import settings
+from backend.config.logging_config import setup_logging
 from backend.bot.session_manager import SessionManager
 from backend.api.routes import api_router
 from backend.api.websocket import router as ws_router
@@ -15,6 +16,9 @@ from backend.alerts.email_templates import get_template
 from backend.bot.portfolio_manager import PortfolioManager
 from backend.bot.instrument_registry import InstrumentRegistry
 from backend.bot.option_chain_manager import OptionChainManager
+
+# Setup centralized logging before other initializations
+setup_logging()
 
 logger = structlog.get_logger()
 
