@@ -24,12 +24,12 @@
 - [x] Implement PCR Reversal Strategy (`backend/strategies/pcr_reversal.py`).
 - [x] Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`).
 
-## Phase 4: API & Alerting
+## Phase 4: API & Alerting (Completed)
 - [x] Setup FastAPI main application and routing (`backend/main.py`).
 - [x] Build REST API endpoints for `/status`, `/positions`, `/pnl`, `/trades`, etc. (`backend/api/routes/`).
 - [x] Build WebSocket server to emit events (`backend/api/websocket.py`).
-- [ ] Set up Email Service with HTML templating (`backend/alerts/email_service.py`).
-- [ ] Use SQLite to persist trades history (`backend/storage/database.py`).
+- [x] Set up Email Service with HTML templating (`backend/alerts/email_service.py`).
+- [x] Use SQLite to persist trades history (`backend/storage/database.py`).
 
 ## Phase 5: Frontend Dashboard
 - [ ] Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`).

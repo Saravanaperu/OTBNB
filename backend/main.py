@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +9,9 @@ from backend.config.settings import settings
 from backend.bot.session_manager import SessionManager
 from backend.api.routes import api_router
 from backend.api.websocket import router as ws_router
+from backend.storage.database import init_db
+from backend.alerts.email_service import EmailService
+from backend.alerts.email_templates import get_template
 
 logger = structlog.get_logger()
 
@@ -29,7 +33,8 @@ app.add_middleware(
 # Global bot state
 bot_state = {
     "status": "STOPPED",
-    "session_manager": None
+    "session_manager": None,
+    "email_service": None
 }
 
 def get_bot_state():
@@ -42,6 +47,17 @@ app.include_router(ws_router, prefix="/ws")
 async def startup_event():
     logger.info("Starting up FastAPI application...")
     bot_state["session_manager"] = SessionManager()
+
+    # Initialize DB
+    await init_db()
+
+    # Initialize Email Service
+    email_service = EmailService()
+    bot_state["email_service"] = email_service
+
+    # Send bot start alert
+    html_content = get_template("bot_start").render(time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    asyncio.create_task(email_service.send_email("Bot Started Successfully", html_content))
 
     # In a real scenario, login should happen here or via API
     # bot_state["session_manager"].login()
