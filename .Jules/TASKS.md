@@ -9,13 +9,6 @@
 | DEV-005 | Completed | Medium | Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`). | Developer | DEV-002, DEV-003, DEV-004 |
 | INT-001 | Completed | Low | Set up Email Service with HTML templating (`backend/alerts/email_service.py`). | Integrator | None |
 | DEV-009 | Completed | Medium | Use SQLite to persist trades history (`backend/storage/database.py`). | Developer | None |
-| UX-001 | Pending | Low | Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`). | UIMaster | None |
-| UX-002 | Pending | Low | Implement layout components (TopBar, SideNav, SignalTicker). | UIMaster | UX-001 |
-| UX-003 | Pending | Low | Configure `zustand` stores for bot status and market data. | Developer | UX-001 |
-| UX-004 | Pending | Low | Implement WebSocket custom hook to ingest live ticks and position updates. | Developer | UX-003, DEV-008 |
-| UX-005 | Pending | Low | Build the live monitoring UI: `PositionsTable`, `RiskGauge`, `PnLCurve` components. | UIMaster | UX-002, UX-004 |
-| UX-006 | Pending | Low | Build the `TradeHistory` view pulling from the backend. | UIMaster | UX-002, DEV-007 |
-| UX-007 | Pending | Low | Finalize configuration panels to adjust bot settings from UI. | UIMaster | UX-002, DEV-007 |
 | INT-002 | Pending | High | Link frontend to backend endpoints. | Integrator | DEV-007, UX-001 |
 | QA-001 | Pending | High | Write basic unit tests for the core logic (Greeks, Risk, Option Chain). | QA Engineer | ARCH-004, ARCH-005, ARCH-006 |
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
@@ -37,3 +30,10 @@
 | DEV-006 | Completed | Medium | Setup FastAPI main application and routing (`backend/main.py`). | Architect | None |
 | DEV-007 | Completed | Medium | Build REST API endpoints for `/status`, `/positions`, `/pnl`, `/trades`, etc. | Developer | DEV-006 |
 | DEV-008 | Completed | Medium | Build WebSocket server to emit events (`backend/api/websocket.py`). | Architect | DEV-006 |
+| UX-001 | Completed | Low | Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`). | UIMaster | None |
+| UX-002 | Completed | Low | Implement layout components (TopBar, SideNav, SignalTicker). | UIMaster | UX-001 |
+| UX-003 | Completed | Low | Configure `zustand` stores for bot status and market data. | Developer | UX-001 |
+| UX-004 | Completed | Low | Implement WebSocket custom hook to ingest live ticks and position updates. | Developer | UX-003, DEV-008 |
+| UX-005 | Completed | Low | Build the live monitoring UI: `PositionsTable`, `RiskGauge`, `PnLCurve` components. | UIMaster | UX-002, UX-004 |
+| UX-006 | Completed | Low | Build the `TradeHistory` view pulling from the backend. | UIMaster | UX-002, DEV-007 |
+| UX-007 | Completed | Low | Finalize configuration panels to adjust bot settings from UI. | UIMaster | UX-002, DEV-007 |

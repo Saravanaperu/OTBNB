@@ -31,14 +31,14 @@
 - [x] Set up Email Service with HTML templating (`backend/alerts/email_service.py`).
 - [x] Use SQLite to persist trades history (`backend/storage/database.py`).
 
-## Phase 5: Frontend Dashboard
-- [ ] Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`).
-- [ ] Implement layout components (TopBar, SideNav, SignalTicker).
-- [ ] Configure `zustand` stores for bot status and market data.
-- [ ] Implement WebSocket custom hook to ingest live ticks and position updates.
-- [ ] Build the live monitoring UI: `PositionsTable`, `RiskGauge`, `PnLCurve` components.
-- [ ] Build the `TradeHistory` view pulling from the backend.
-- [ ] Finalize configuration panels to adjust bot settings from UI.
+## Phase 5: Frontend Dashboard (Completed)
+- [x] Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`).
+- [x] Implement layout components (TopBar, SideNav, SignalTicker).
+- [x] Configure `zustand` stores for bot status and market data.
+- [x] Implement WebSocket custom hook to ingest live ticks and position updates.
+- [x] Build the live monitoring UI: `PositionsTable`, `RiskGauge`, `PnLCurve` components.
+- [x] Build the `TradeHistory` view pulling from the backend.
+- [x] Finalize configuration panels to adjust bot settings from UI.
 
 ## Phase 6: System Integration & Testing
 - [ ] Link frontend to backend endpoints.
