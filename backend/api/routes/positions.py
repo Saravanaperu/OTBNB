@@ -152,7 +152,7 @@ async def exit_position(id: str):
             exit_signal = ExitSignal(
                 symbol=pos.symbol,
                 token=pos.token,
-                reason="Manual exit triggered via API"
+                reason="Manual exit triggered via API",
             )
             order_id = await engine.exit(
                 position=pos,

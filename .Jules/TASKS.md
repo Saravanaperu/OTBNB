@@ -12,9 +12,6 @@
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
 | DEV-010 | Done (2025-03-05) | High | Integrate `ExecutionEngine` into main application logic and endpoints. | Developer | INT-003 |
-
-| ID | Status | Priority | Description | Assignee | Dependencies |
-|---|---|---|---|---|---|
 | OPS-002 | Done (2026-03-10) | High | Enhance CI/CD pipeline with black, flake8, mypy, and test coverage | Ops | None |
 | UI-008 | Done (2026-03-10) | Low | Add ARIA labels to buttons for accessibility. | UIMaster | None |
 | INT-003 | Done (2026-03-10) | High | Implement ExecutionEngine for AngelOne SmartAPI integration | Integrator | None |
