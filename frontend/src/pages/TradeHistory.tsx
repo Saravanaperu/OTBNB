@@ -9,32 +9,7 @@ import {
 import { Trade } from '../types';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
-
-const fetchTrades = async (): Promise<Trade[]> => {
-  // In a real app, this would fetch from the backend:
-  // const res = await fetch('http://localhost:8000/api/v1/trades');
-  // return res.json();
-
-  // For now, return mock data
-  return Array.from({ length: 50 }).map((_, i) => ({
-    id: `TRD-${i}`,
-    instrument: 'NIFTY',
-    tradingsymbol: `NIFTY24APR22000CE`,
-    direction: i % 2 === 0 ? 'BUY' : 'SELL',
-    strike: 22000,
-    expiry: '2024-04-25',
-    lots: 1,
-    quantity: 50,
-    entry_price: 100 + Math.random() * 50,
-    entry_time: new Date(Date.now() - (i * 3600000)).toISOString(),
-    exit_price: i % 3 === 0 ? undefined : (100 + Math.random() * 100),
-    exit_time: i % 3 === 0 ? undefined : new Date(Date.now() - (i * 3600000) + 1800000).toISOString(),
-    realised_pnl: i % 3 === 0 ? undefined : (Math.random() > 0.5 ? Math.random() * 1000 : -Math.random() * 500),
-    strategy_name: 'MomentumBreakout',
-    order_id_entry: `ORD-E-${i}`,
-    status: i % 3 === 0 ? 'OPEN' : 'CLOSED',
-  }));
-};
+import { useGetTrades } from '../hooks/useBotAPI';
 
 const columnHelper = createColumnHelper<Trade>();
 
@@ -101,10 +76,7 @@ const columns = [
 ];
 
 export function TradeHistory() {
-  const { data: trades, isLoading } = useQuery({
-    queryKey: ['trades'],
-    queryFn: fetchTrades,
-  });
+  const { data: trades, isLoading } = useGetTrades();
 
   const table = useReactTable({
     data: trades || [],
