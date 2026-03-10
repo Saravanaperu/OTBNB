@@ -1,4 +1,7 @@
+from unittest.mock import patch
+
 from backend.bot.greeks_engine import GreeksEngine
+from py_vollib.black_scholes.implied_volatility import PriceIsBelowIntrinsic
 
 
 def test_greeks_engine_refresh():
@@ -62,3 +65,50 @@ def test_greeks_engine_invalid_data():
     engine.refresh(snapshot, 22000.0, 0.05)
 
     assert "iv" not in snapshot["12345"]
+
+
+def test_greeks_engine_invalid_flag():
+    engine = GreeksEngine()
+    snapshot = {
+        "12345": {"token": "12345", "ltp": 150.0, "strike": 22000, "option_type": "x"}
+    }
+
+    engine.refresh(snapshot, 22000.0, 0.05)
+
+    assert "iv" not in snapshot["12345"]
+
+
+@patch("py_vollib.black_scholes.implied_volatility.implied_volatility")
+def test_greeks_engine_price_below_intrinsic(mock_iv):
+    mock_iv.side_effect = PriceIsBelowIntrinsic()
+
+    engine = GreeksEngine()
+    snapshot = {
+        "12345": {"token": "12345", "ltp": 1.0, "strike": 20000, "option_type": "c"}
+    }
+
+    engine.refresh(snapshot, 22000.0, 0.05)
+
+    assert snapshot["12345"]["iv"] is None
+    assert snapshot["12345"]["delta"] is None
+    assert snapshot["12345"]["gamma"] is None
+    assert snapshot["12345"]["theta"] is None
+    assert snapshot["12345"]["vega"] is None
+
+
+@patch("py_vollib.black_scholes.implied_volatility.implied_volatility")
+def test_greeks_engine_generic_exception(mock_iv):
+    mock_iv.side_effect = Exception("Generic error")
+
+    engine = GreeksEngine()
+    snapshot = {
+        "12345": {"token": "12345", "ltp": 150.0, "strike": 22000, "option_type": "c"}
+    }
+
+    engine.refresh(snapshot, 22000.0, 0.05)
+
+    assert snapshot["12345"]["iv"] is None
+    assert snapshot["12345"]["delta"] is None
+    assert snapshot["12345"]["gamma"] is None
+    assert snapshot["12345"]["theta"] is None
+    assert snapshot["12345"]["vega"] is None

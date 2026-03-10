@@ -75,3 +75,14 @@ def test_risk_manager_size_minimum():
 
     size = rm.size(mock_signal, 15)
     assert size == 15
+
+
+def test_risk_manager_size_zero_risk():
+    rm = RiskManager(config={"risk_per_trade": 1000})
+
+    mock_signal = MagicMock()
+    mock_signal.entry_price = 100
+    mock_signal.stop_loss = 100
+
+    size = rm.size(mock_signal, 15)
+    assert size == 15
