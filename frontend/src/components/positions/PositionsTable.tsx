@@ -82,12 +82,10 @@ export function PositionsTable() {
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (
                   <th key={header.id} className="px-6 py-3 font-medium">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                    {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                    )}
                   </th>
                 ))}
               </tr>

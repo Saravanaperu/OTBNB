@@ -12,6 +12,9 @@ from backend.api.websocket import router as ws_router
 from backend.storage.database import init_db
 from backend.alerts.email_service import EmailService
 from backend.alerts.email_templates import get_template
+from backend.bot.portfolio_manager import PortfolioManager
+from backend.bot.instrument_registry import InstrumentRegistry
+from backend.bot.option_chain_manager import OptionChainManager
 
 logger = structlog.get_logger()
 
@@ -34,7 +37,9 @@ app.add_middleware(
 bot_state = {
     "status": "STOPPED",
     "session_manager": None,
-    "email_service": None
+    "email_service": None,
+    "portfolio_manager": None,
+    "option_chain_manager": None
 }
 
 def get_bot_state():
@@ -54,6 +59,10 @@ async def startup_event():
     # Initialize Email Service
     email_service = EmailService()
     bot_state["email_service"] = email_service
+
+    bot_state["portfolio_manager"] = PortfolioManager()
+    registry = InstrumentRegistry()
+    bot_state["option_chain_manager"] = OptionChainManager(registry)
 
     # Send bot start alert
     html_content = get_template("bot_start").render(time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
