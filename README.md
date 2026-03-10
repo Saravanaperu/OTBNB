@@ -18,4 +18,25 @@ This repository contains an options buying bot for trading NIFTY and BANKNIFTY o
 
 ## Setup
 
-See individual folders for setup instructions.
+### 1. Backend
+To run the backend FastAPI server and the core Python trading bot engine:
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+### 2. Frontend
+To run the React based user interface dashboard:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 3. Testing
+To run the automated test suite for the backend:
+```bash
+cd backend
+PYTHONPATH=. pytest tests/
+```
