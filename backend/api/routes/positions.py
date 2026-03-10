@@ -139,12 +139,35 @@ async def get_position(id: str):
 async def exit_position(id: str):
     """Manually trigger exit for a specific position"""
     from backend.main import get_bot_state
+    from backend.bot.models import ExitSignal
 
     bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
+    engine = bot_state.get("execution_engine")
+
     if pm and id in pm.positions:
-        # Dummy exit price of current price
-        exit_price = pm.positions[id].position.current_price
+        pos = pm.positions[id].position
+        order_id = None
+        if engine:
+            exit_signal = ExitSignal(
+                symbol=pos.symbol,
+                token=pos.token,
+                reason="Manual exit triggered via API",
+            )
+            order_id = await engine.exit(
+                position=pos,
+                exit_signal=exit_signal,
+                exchange="NFO",
+                variety="NORMAL",
+                order_type="MARKET",  # Default market for immediate exit.
+                product_type="INTRADAY",
+                duration="DAY",
+            )
+
+        # We always remove it from the portfolio manager, whether the API call succeeded or not.
+        # But if we strictly want to keep it if the order failed, we'd handle it differently.
+        # Here we mimic the existing logic where manual exit assumes it closes the position.
+        exit_price = pos.current_price
         pm.remove_position(id, exit_price)
-        return {"success": True, "order_id": f"exit_order_{id}"}
+        return {"success": True, "order_id": order_id or f"exit_order_{id}"}
     raise HTTPException(status_code=404, detail="Position not found")

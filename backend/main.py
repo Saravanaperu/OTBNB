@@ -18,6 +18,15 @@ from backend.alerts.email_templates import get_template
 from backend.bot.portfolio_manager import PortfolioManager
 from backend.bot.instrument_registry import InstrumentRegistry
 from backend.bot.option_chain_manager import OptionChainManager
+from backend.bot.execution_engine import ExecutionEngine
+from backend.bot.feed_manager import FeedManager
+from backend.bot.greeks_engine import GreeksEngine
+from backend.bot.risk_manager import RiskManager
+from backend.strategies.signal_aggregator import SignalAggregator
+from backend.strategies.momentum_breakout import MomentumBreakoutStrategy
+from backend.strategies.oi_buildup import OIBuildupStrategy
+from backend.strategies.pcr_reversal import PCRReversalStrategy
+from backend.bot.bot_engine import BotEngine
 
 # Setup centralized logging before other initializations
 setup_logging()
@@ -46,6 +55,8 @@ bot_state: Dict[str, Any] = {
     "email_service": None,
     "portfolio_manager": None,
     "option_chain_manager": None,
+    "execution_engine": None,
+    "bot_engine": None,
 }
 
 
@@ -69,6 +80,34 @@ async def lifespan(app: FastAPI):
     bot_state["portfolio_manager"] = PortfolioManager()
     registry = InstrumentRegistry()
     bot_state["option_chain_manager"] = OptionChainManager(registry)
+    bot_state["execution_engine"] = ExecutionEngine(bot_state["session_manager"])
+
+    # Initialize strategies and bot engine
+    strategies = [
+        MomentumBreakoutStrategy(),
+        OIBuildupStrategy(),
+        PCRReversalStrategy(),
+    ]
+
+    nifty_agg = SignalAggregator(strategies, registry)
+    bnf_agg = SignalAggregator(strategies, registry)
+
+    feed_manager = FeedManager(bot_state["session_manager"])
+    greeks_engine = GreeksEngine()
+    risk_manager = RiskManager(
+        {"daily_loss_limit": 5000, "max_open_positions": 5, "risk_per_trade": 1000}
+    )
+
+    bot_engine = BotEngine(
+        feed_manager=feed_manager,
+        option_chain_manager=bot_state["option_chain_manager"],
+        greeks_engine=greeks_engine,
+        portfolio_manager=bot_state["portfolio_manager"],
+        execution_engine=bot_state["execution_engine"],
+        risk_manager=risk_manager,
+        aggregators={"NIFTY": nifty_agg, "BANKNIFTY": bnf_agg},
+    )
+    bot_state["bot_engine"] = bot_engine
 
     # Send bot start alert
     html_content = get_template("bot_start").render(
@@ -79,13 +118,18 @@ async def lifespan(app: FastAPI):
     )
 
     # In a real scenario, login should happen here or via API
+    # In a real scenario, login should happen here or via API
     # bot_state["session_manager"].login()
-    bot_state["status"] = "INITIALIZED"
+    bot_state["status"] = "RUNNING"
+    await bot_state["bot_engine"].start()
 
     yield
 
     # Shutdown
     logger.info("Shutting down FastAPI application...")
+    if bot_state.get("bot_engine"):
+        await bot_state["bot_engine"].stop()
+
     if bot_state["session_manager"]:
         bot_state["session_manager"].logout()
 

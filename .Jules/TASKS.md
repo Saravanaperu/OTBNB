@@ -6,12 +6,12 @@
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
 | QA-003 | Pending | Medium | Increase test coverage for frontend (currently only `App.test.tsx` exists). | QA Engineer | None |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
-| DEV-010 | Pending | High | Integrate `ExecutionEngine` into main application logic and endpoints. | Developer | INT-003 |
 
 # Archive
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| DEV-010 | Done (2025-03-05) | High | Integrate `ExecutionEngine` into main application logic and endpoints. | Developer | INT-003 |
 | OPS-002 | Done (2026-03-10) | High | Enhance CI/CD pipeline with black, flake8, mypy, and test coverage | Ops | None |
 | UI-008 | Done (2026-03-10) | Low | Add ARIA labels to buttons for accessibility. | UIMaster | None |
 | INT-003 | Done (2026-03-10) | High | Implement ExecutionEngine for AngelOne SmartAPI integration | Integrator | None |
