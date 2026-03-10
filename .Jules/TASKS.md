@@ -7,8 +7,8 @@
 | DEV-003 | Completed | Medium | Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`). | Developer | DEV-001 |
 | DEV-004 | Completed | Medium | Implement PCR Reversal Strategy (`backend/strategies/pcr_reversal.py`). | Developer | DEV-001 |
 | DEV-005 | Completed | Medium | Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`). | Developer | DEV-002, DEV-003, DEV-004 |
-| INT-001 | Pending | Low | Set up Email Service with HTML templating (`backend/alerts/email_service.py`). | Integrator | None |
-| DEV-009 | Pending | Medium | Use SQLite to persist trades history (`backend/storage/database.py`). | Developer | None |
+| INT-001 | Completed | Low | Set up Email Service with HTML templating (`backend/alerts/email_service.py`). | Integrator | None |
+| DEV-009 | Completed | Medium | Use SQLite to persist trades history (`backend/storage/database.py`). | Developer | None |
 | UX-001 | Pending | Low | Set up Vite + React + TypeScript with Tailwind CSS (`frontend/`). | UIMaster | None |
 | UX-002 | Pending | Low | Implement layout components (TopBar, SideNav, SignalTicker). | UIMaster | UX-001 |
 | UX-003 | Pending | Low | Configure `zustand` stores for bot status and market data. | Developer | UX-001 |
