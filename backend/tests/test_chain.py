@@ -44,3 +44,20 @@ def test_option_chain_manager_get_snapshot_empty():
     snapshot = manager.get_snapshot("NIFTY")
 
     assert snapshot == {}
+
+
+def test_option_chain_manager_update_existing_token():
+    mock_registry = MagicMock()
+    manager = OptionChainManager(mock_registry)
+
+    tick1 = {"token": "100", "ltp": 50.5}
+    tick2 = {"token": "100", "ltp": 55.0, "volume": 2000}
+
+    manager.update("NIFTY", tick1)
+    manager.update("NIFTY", tick2)
+
+    snapshot = manager.get_snapshot("NIFTY")
+
+    assert "100" in snapshot
+    assert snapshot["100"]["ltp"] == 55.0
+    assert snapshot["100"]["volume"] == 2000
