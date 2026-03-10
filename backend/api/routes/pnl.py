@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from typing import List
-from backend.api.schemas import DailyPnL
+from api.schemas import DailyPnL
 
 router = APIRouter()
 

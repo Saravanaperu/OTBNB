@@ -2,8 +2,8 @@ import datetime
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from backend.bot.models import Signal, Position, MarketSnapshot, ExitSignal
-from backend.bot.instrument_registry import InstrumentRegistry
+from bot.models import Signal, Position, MarketSnapshot, ExitSignal
+from bot.instrument_registry import InstrumentRegistry
 
 class BaseStrategy(ABC):
     name: str

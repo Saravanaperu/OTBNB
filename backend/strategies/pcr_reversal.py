@@ -1,8 +1,8 @@
 import datetime
 from typing import Optional
-from backend.bot.models import Signal, Position, MarketSnapshot, ExitSignal
-from backend.strategies.base_strategy import BaseStrategy
-from backend.bot.instrument_registry import InstrumentRegistry
+from bot.models import Signal, Position, MarketSnapshot, ExitSignal
+from strategies.base_strategy import BaseStrategy
+from bot.instrument_registry import InstrumentRegistry
 
 class PCRReversalStrategy(BaseStrategy):
     name = "PCR Reversal"

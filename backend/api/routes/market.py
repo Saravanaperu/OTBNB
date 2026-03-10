@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.api.schemas import OptionChain
+from api.schemas import OptionChain
 from datetime import datetime
 
 router = APIRouter()

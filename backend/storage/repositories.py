@@ -2,8 +2,8 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.storage.database import TradeModel, AsyncSessionLocal
-from backend.api.schemas import Trade
+from storage.database import TradeModel, AsyncSessionLocal
+from api.schemas import Trade
 
 class TradeRepository:
     async def add_trade(self, trade: Trade) -> TradeModel:

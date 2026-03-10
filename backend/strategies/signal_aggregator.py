@@ -1,7 +1,7 @@
 from typing import List, Optional
-from backend.bot.models import Signal, MarketSnapshot
-from backend.strategies.base_strategy import BaseStrategy
-from backend.bot.instrument_registry import InstrumentRegistry
+from bot.models import Signal, MarketSnapshot
+from strategies.base_strategy import BaseStrategy
+from bot.instrument_registry import InstrumentRegistry
 
 class SignalAggregator:
     def __init__(self, strategies: List[BaseStrategy], registry: InstrumentRegistry):

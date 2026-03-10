@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.api.routes import status, positions, pnl, trades, market, config
+from api.routes import status, positions, pnl, trades, market, config
 
 api_router = APIRouter()
 

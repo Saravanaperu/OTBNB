@@ -1,5 +1,5 @@
 import structlog
-from backend.bot.models import Position
+from bot.models import Position
 
 logger = structlog.get_logger()
 

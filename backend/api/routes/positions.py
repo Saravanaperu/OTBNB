@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from backend.api.schemas import Position, ClosedPosition
+from api.schemas import Position, ClosedPosition
 
 router = APIRouter()
 

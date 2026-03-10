@@ -5,13 +5,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from backend.config.settings import settings
-from backend.bot.session_manager import SessionManager
-from backend.api.routes import api_router
-from backend.api.websocket import router as ws_router
-from backend.storage.database import init_db
-from backend.alerts.email_service import EmailService
-from backend.alerts.email_templates import get_template
+from config.settings import settings
+from bot.session_manager import SessionManager
+from api.routes import api_router
+from api.websocket import router as ws_router
+from storage.database import init_db
+from alerts.email_service import EmailService
+from alerts.email_templates import get_template
 
 logger = structlog.get_logger()
 

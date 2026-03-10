@@ -4,7 +4,7 @@ router = APIRouter()
 
 @router.get("/health")
 async def health_check():
-    from backend.main import get_bot_state
+    from main import get_bot_state
     bot_state = get_bot_state()
     # Adding some mock fields requested by UI
     import time
@@ -18,7 +18,7 @@ async def health_check():
 
 @router.get("/")
 async def get_status():
-    from backend.main import get_bot_state
+    from main import get_bot_state
     bot_state = get_bot_state()
     return {
         "bot_running": bot_state["status"] == "RUNNING",

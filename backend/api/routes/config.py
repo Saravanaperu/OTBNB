@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from typing import List
-from backend.api.schemas import RiskConfig, StrategyConfig
+from api.schemas import RiskConfig, StrategyConfig
 
 router = APIRouter()
 

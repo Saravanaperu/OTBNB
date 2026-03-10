@@ -3,8 +3,8 @@ from email.message import EmailMessage
 import structlog
 from typing import Optional
 
-from backend.config.settings import settings
-from backend.alerts.email_templates import get_template
+from config.settings import settings
+from alerts.email_templates import get_template
 
 logger = structlog.get_logger()
 

@@ -1,6 +1,6 @@
 import pyotp
 from SmartApi import SmartConnect
-from backend.config.settings import settings
+from config.settings import settings
 import structlog
 
 logger = structlog.get_logger()

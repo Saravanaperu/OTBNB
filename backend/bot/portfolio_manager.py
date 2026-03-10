@@ -1,7 +1,7 @@
 import structlog
 from typing import Dict
-from backend.bot.position_manager import PositionManager
-from backend.bot.models import Position
+from bot.position_manager import PositionManager
+from bot.models import Position
 
 logger = structlog.get_logger()
 

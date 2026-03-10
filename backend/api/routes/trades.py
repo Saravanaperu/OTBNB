@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Query
 from typing import List, Optional
 from datetime import date
-from backend.api.schemas import Trade, PerformanceStats
-from backend.storage.repositories import TradeRepository
+from api.schemas import Trade, PerformanceStats
+from storage.repositories import TradeRepository
 
 router = APIRouter()
 repo = TradeRepository()

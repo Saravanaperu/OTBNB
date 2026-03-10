@@ -18,4 +18,48 @@ This repository contains an options buying bot for trading NIFTY and BANKNIFTY o
 
 ## Setup
 
-See individual folders for setup instructions.
+### Prerequisites
+- Python 3.12+
+- Node.js 18+
+- AngelOne SmartAPI account and credentials
+
+### Backend Setup
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a virtual environment (optional but recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Set up the `.env` file based on `config/settings.yaml` to include your AngelOne credentials:
+   ```env
+   ANGEL_API_KEY=your_api_key
+   ANGEL_CLIENT_ID=your_client_id
+   ANGEL_PASSWORD=your_password
+   ANGEL_TOTP_SECRET=your_totp_secret
+   ```
+5. Run the FastAPI backend:
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+### Frontend Setup
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. The dashboard will be accessible at `http://localhost:5173`.
