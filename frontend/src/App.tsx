@@ -22,7 +22,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="flex h-screen bg-background text-slate-100 overflow-hidden font-sans antialiased selection:bg-primary/30">
           <SideNav />
           <div className="flex-1 flex flex-col h-full min-w-0">
