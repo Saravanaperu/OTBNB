@@ -1,75 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { RiskConfig, StrategyConfig } from '../types';
-
-// Mock API functions
-const fetchConfig = async () => {
-  // const riskRes = await fetch('/api/v1/config/risk');
-  // const riskData = await riskRes.json();
-
-  const mockRisk: RiskConfig = {
-    daily_hard_limit: 5000,
-    daily_soft_limit: 3000,
-    per_trade_risk: 1000,
-    max_open_positions: 3,
-    max_same_instrument: 2,
-    max_lots_per_trade: 5,
-    max_capital_pct: 0.1,
-    iv_rank_buy_threshold: 40,
-    min_delta: 0.2,
-    max_delta: 0.6,
-    max_theta_daily_pct: 0.05,
-    min_strike_volume: 50000,
-    min_strike_oi: 10000,
-    max_bid_ask_spread_pct: 0.05,
-    no_trade_after: '14:30',
-    no_0dte_after: '13:00'
-  };
-
-  const mockStrategies: StrategyConfig[] = [
-    {
-      name: 'MomentumBreakout',
-      enabled: true,
-      instruments: ['NIFTY', 'BANKNIFTY'],
-      params: { rsi_period: 14, overbought: 70, oversold: 30 }
-    },
-    {
-      name: 'OIBuildup',
-      enabled: false,
-      instruments: ['NIFTY'],
-      params: { lookback_periods: 5, oi_change_threshold: 0.2 }
-    }
-  ];
-
-  return { risk: mockRisk, strategies: mockStrategies };
-};
+import { RiskConfig } from '../types';
+import { useGetRiskConfig, useGetStrategies, useUpdateRiskConfig } from '../hooks/useBotAPI';
 
 export function Configuration() {
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['config'],
-    queryFn: fetchConfig,
-  });
+  const { data: riskData, isLoading: isLoadingRisk } = useGetRiskConfig();
+  const { data: strategiesData, isLoading: isLoadingStrats } = useGetStrategies();
+  const updateRiskMutation = useUpdateRiskConfig();
 
   const [riskConfig, setRiskConfig] = useState<RiskConfig | null>(null);
 
   useEffect(() => {
-    if (data?.risk) {
-      setRiskConfig(data.risk);
+    if (riskData) {
+      setRiskConfig(riskData);
     }
-  }, [data]);
+  }, [riskData]);
 
-  const saveConfig = async (newConfig: RiskConfig) => {
-     // await fetch('/api/v1/config/risk', { method: 'POST', body: JSON.stringify(newConfig) })
-     return newConfig;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (riskConfig) {
+      updateRiskMutation.mutate(riskConfig, {
+        onSuccess: () => {
+          alert("Configuration saved successfully!");
+        }
+      });
+    }
   };
-
-  const mutation = useMutation({
-    mutationFn: saveConfig,
-    onSuccess: () => {
-       alert("Configuration saved successfully!");
-       refetch();
-    }
-  });
 
   const handleRiskChange = (key: keyof RiskConfig, value: string | number) => {
     if (!riskConfig) return;
@@ -79,14 +34,7 @@ export function Configuration() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (riskConfig) {
-      mutation.mutate(riskConfig);
-    }
-  };
-
-  if (isLoading || !riskConfig || !data) {
+  if (isLoadingRisk || isLoadingStrats || !riskConfig || !strategiesData) {
     return <div className="p-6">Loading configuration...</div>;
   }
 
@@ -186,10 +134,10 @@ export function Configuration() {
           <div className="mt-4 pt-4 border-t border-border flex justify-end">
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={updateRiskMutation.isPending}
               className="btn btn-primary"
             >
-              {mutation.isPending ? 'Saving...' : 'Save Risk Config'}
+              {updateRiskMutation.isPending ? 'Saving...' : 'Save Risk Config'}
             </button>
           </div>
         </form>
@@ -197,7 +145,7 @@ export function Configuration() {
         <div className="card p-6 flex flex-col gap-4">
           <h2 className="text-lg font-semibold text-slate-200 border-b border-border pb-2 mb-2">Active Strategies</h2>
 
-          {data?.strategies.map((strat) => (
+          {strategiesData?.map((strat) => (
              <div key={strat.name} className="bg-background border border-border p-4 rounded flex justify-between items-center">
                 <div>
                    <h3 className="font-medium text-slate-200">{strat.name}</h3>

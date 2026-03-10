@@ -1,9 +1,28 @@
+import { useEffect } from 'react';
 import { Play, Square, Wifi, WifiOff } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useBotStore } from '../../store/botStore';
+import { useGetStatus, usePauseBot, useResumeBot } from '../../hooks/useBotAPI';
 
 export function TopBar() {
-  const { isRunning, isConnected, toggleBot } = useBotStore();
+  const { isRunning, isConnected, setBotStatus } = useBotStore();
+  const { data: statusData } = useGetStatus();
+  const pauseMutation = usePauseBot();
+  const resumeMutation = useResumeBot();
+
+  useEffect(() => {
+    if (statusData) {
+      setBotStatus(statusData.bot_running);
+    }
+  }, [statusData, setBotStatus]);
+
+  const toggleBot = () => {
+    if (isRunning) {
+      pauseMutation.mutate();
+    } else {
+      resumeMutation.mutate();
+    }
+  };
 
   return (
     <div className="h-16 bg-surface border-b border-border flex items-center justify-between px-6 shrink-0 w-full z-10 sticky top-0">

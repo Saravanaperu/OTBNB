@@ -1,8 +1,20 @@
+import { useEffect } from 'react';
 import { PositionsTable } from '../components/positions/PositionsTable';
 import { RiskGauge } from '../components/charts/RiskGauge';
 import { PnLCurve } from '../components/charts/PnLCurve';
+import { useGetPositions } from '../hooks/useBotAPI';
+import { useMarketStore } from '../store/marketStore';
 
 export function HomeDashboard() {
+  const { data: positionsData } = useGetPositions();
+  const { setPositions } = useMarketStore();
+
+  useEffect(() => {
+    if (positionsData) {
+      setPositions(positionsData);
+    }
+  }, [positionsData, setPositions]);
+
   return (
     <div className="p-6 h-full w-full flex flex-col gap-6">
       <div className="flex justify-between items-end">
