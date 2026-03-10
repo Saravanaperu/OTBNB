@@ -58,7 +58,7 @@ class ExecutionEngine:
                     orderparams=orderparams,
                 )
 
-                # We need to run this blocking call in a thread or just call it if we don't care about strict non-blocking
+                # We need to run this blocking call in a thread
                 # placeOrder is synchronous in smartapi-python
                 response = await asyncio.to_thread(
                     self.session_manager.api.placeOrder, orderparams

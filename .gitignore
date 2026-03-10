@@ -7,3 +7,6 @@ build/
 __pycache__/
 .venv/
 venv/
+frontend/coverage/
+backend/.coverage
+fix_lint*

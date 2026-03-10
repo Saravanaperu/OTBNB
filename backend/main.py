@@ -1,3 +1,5 @@
+from typing import Dict, Any
+from contextlib import asynccontextmanager
 import asyncio
 import datetime
 import structlog
@@ -38,7 +40,7 @@ app.add_middleware(
 )
 
 # Global bot state
-bot_state = {
+bot_state: Dict[str, Any] = {
     "status": "STOPPED",
     "session_manager": None,
     "email_service": None,
@@ -49,9 +51,6 @@ bot_state = {
 
 def get_bot_state():
     return bot_state
-
-
-from contextlib import asynccontextmanager
 
 
 @asynccontextmanager

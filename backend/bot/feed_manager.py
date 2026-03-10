@@ -1,7 +1,7 @@
 import asyncio
 import structlog
 import threading
-from typing import Dict, Any
+from typing import Dict
 from SmartApi.smartWebSocketV2 import SmartWebSocketV2
 
 logger = structlog.get_logger()

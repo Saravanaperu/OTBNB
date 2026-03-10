@@ -1,5 +1,5 @@
+from typing import Optional, Dict, Any
 import structlog
-from typing import Dict, Any
 
 logger = structlog.get_logger()
 
@@ -13,7 +13,7 @@ class RiskApproval:
 class RiskManager:
     """Evaluates trades against risk constraints."""
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.max_loss = self.config.get("daily_loss_limit", 5000)
         self.max_trades = self.config.get("max_open_positions", 5)

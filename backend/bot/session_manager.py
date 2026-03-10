@@ -32,7 +32,7 @@ class SessionManager:
             # Authenticate
             data = self.api.generateSession(self.client_code, self.password, totp)
 
-            if data["status"] == False:
+            if data.get("status") is False:
                 logger.error("Login failed", message=data["message"])
                 raise Exception(f"Login failed: {data['message']}")
 

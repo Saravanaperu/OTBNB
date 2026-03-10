@@ -1,14 +1,19 @@
-import datetime
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Column, String, Float, Integer, DateTime
 
 from backend.config.settings import settings
 
 engine = create_async_engine(settings.database_url, echo=False)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-Base = declarative_base()
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
+
+
+class Base(DeclarativeBase):
+    pass
 
 
 class TradeModel(Base):

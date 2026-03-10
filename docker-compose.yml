@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: options_bot_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - BROKER_API_KEY=${BROKER_API_KEY:-}
+      - BROKER_CLIENT_ID=${BROKER_CLIENT_ID:-}
+      - BROKER_PIN=${BROKER_PIN:-}
+      - TOTP_SECRET=${TOTP_SECRET:-}
+      - DB_URL=sqlite+aiosqlite:////app/data/trading_bot.db
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - options_bot_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000/api/v1
+        - VITE_WS_URL=ws://localhost:8000/ws
+    container_name: options_bot_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - options_bot_net
+
+networks:
+  options_bot_net:
+    driver: bridge

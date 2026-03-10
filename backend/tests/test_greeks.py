@@ -1,4 +1,3 @@
-import pytest
 from backend.bot.greeks_engine import GreeksEngine
 
 

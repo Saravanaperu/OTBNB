@@ -9,7 +9,6 @@ async def health_check():
 
     bot_state = get_bot_state()
     # Adding some mock fields requested by UI
-    import time
 
     return {
         "status": "ok",
