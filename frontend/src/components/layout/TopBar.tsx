@@ -62,6 +62,7 @@ export function TopBar() {
         {/* Master Control */}
         <button
           onClick={toggleBot}
+          aria-label={isRunning ? "Stop Bot" : "Start Bot"}
           className={clsx(
             "flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 shadow-sm",
             isRunning

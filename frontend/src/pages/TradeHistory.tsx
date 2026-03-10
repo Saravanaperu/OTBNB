@@ -151,6 +151,7 @@ export function TradeHistory() {
                 <button
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
+                  aria-label="Previous page"
                   className="btn btn-outline py-1 px-3 text-xs"
                 >
                   Previous
@@ -158,6 +159,7 @@ export function TradeHistory() {
                 <button
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
+                  aria-label="Next page"
                   className="btn btn-outline py-1 px-3 text-xs"
                 >
                   Next

@@ -134,6 +134,7 @@ export function Configuration() {
           <div className="mt-4 pt-4 border-t border-border flex justify-end">
             <button
               type="submit"
+              aria-label="Save Risk Configuration"
               disabled={updateRiskMutation.isPending}
               className="btn btn-primary"
             >
