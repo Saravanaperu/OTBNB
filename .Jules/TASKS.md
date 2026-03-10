@@ -14,6 +14,7 @@
 |---|---|---|---|---|---|
 | UI-008 | Done (2026-03-10) | Low | Add ARIA labels to buttons for accessibility. | UIMaster | None |
 | INT-003 | Done (2026-03-10) | High | Implement ExecutionEngine for AngelOne SmartAPI integration | Integrator | None |
+| OPS-001 | Done (2026-03-10) | Medium | Containerize the application (Dockerfiles and docker-compose). | Ops | None |
 | ARCH-009 | Done (2026-03-10) | High | Set up centralized logging configuration with structlog. | Architect | None |
 
 | ID | Status | Priority | Description | Assignee | Dependencies |

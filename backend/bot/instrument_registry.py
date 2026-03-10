@@ -1,5 +1,5 @@
 import structlog
-import asyncio
+
 import httpx
 from typing import Dict, Any, List
 

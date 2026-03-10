@@ -1,3 +1,4 @@
+from typing import Type, Tuple
 import os
 from pydantic_settings import (
     BaseSettings,
@@ -6,7 +7,6 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 from pydantic import Field
-from typing import List, Tuple, Type
 
 
 class MarketSettings(BaseSettings):

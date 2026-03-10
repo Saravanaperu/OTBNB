@@ -1,6 +1,6 @@
+from datetime import date
 from typing import List, Optional
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.storage.database import TradeModel, AsyncSessionLocal
 from backend.api.schemas import Trade
@@ -26,7 +26,6 @@ class TradeRepository:
     async def get_all_trades(
         self, limit: int = 100, skip: int = 0, target_date: Optional["date"] = None
     ) -> List[TradeModel]:
-        from datetime import date
 
         async with AsyncSessionLocal() as session:
             query = select(TradeModel)

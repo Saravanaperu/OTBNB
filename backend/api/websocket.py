@@ -1,4 +1,4 @@
-from fastapi import WebSocket, Query, HTTPException, APIRouter
+from fastapi import WebSocket, Query, APIRouter
 from typing import List
 import json
 from datetime import datetime
