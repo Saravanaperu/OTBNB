@@ -5,7 +5,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 describe('App Component', () => {
   beforeAll(() => {
     // Mock ResizeObserver for recharts
-    global.ResizeObserver = class ResizeObserver {
+    (globalThis as any).ResizeObserver = class ResizeObserver {
       observe() {}
       unobserve() {}
       disconnect() {}
