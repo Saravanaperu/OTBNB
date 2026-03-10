@@ -23,12 +23,28 @@ jobs:
         python -m pip install --upgrade pip
         cd backend
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install pytest httpx pytest-asyncio logzero
+        pip install pytest httpx pytest-asyncio logzero black flake8 mypy pytest-cov coverage
 
-    - name: Test backend with pytest
+    - name: Check backend formatting
       run: |
         cd backend
-        PYTHONPATH=.. pytest tests/test_main.py
+        PYTHONPATH=.. black . --check
+
+    - name: Lint backend code
+      run: |
+        cd backend
+        PYTHONPATH=.. flake8 --max-line-length=120 .
+
+    - name: Check backend types
+      run: |
+        cd backend
+        PYTHONPATH=.. mypy --explicit-package-bases --ignore-missing-imports .
+
+    - name: Test backend with pytest and check coverage
+      run: |
+        cd backend
+        PYTHONPATH=.. coverage run -m pytest tests/
+        PYTHONPATH=.. coverage report -m --fail-under=58
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
