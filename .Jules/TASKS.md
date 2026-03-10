@@ -11,6 +11,7 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| INT-003 | Done (2024-05-24) | High | Implement ExecutionEngine (`backend/bot/execution_engine.py`) for placing/managing orders via Angel One API | Integrator | None |
 | ARCH-009 | Done (2026-03-10) | High | Set up centralized logging configuration with structlog. | Architect | None |
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
