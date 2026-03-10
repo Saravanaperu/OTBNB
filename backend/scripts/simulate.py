@@ -1,10 +1,12 @@
 import asyncio
 import structlog
+from backend.config.logging_config import setup_logging
 from backend.bot.option_chain_manager import OptionChainManager
 from backend.bot.risk_manager import RiskManager
 from backend.bot.portfolio_manager import PortfolioManager
 from backend.bot.models import Position, Signal
 
+setup_logging()
 logger = structlog.get_logger()
 
 
