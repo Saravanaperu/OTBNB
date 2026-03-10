@@ -14,6 +14,24 @@ describe('App Component', () => {
       disconnect() {}
     };
 
+    // Mock WebSocket to prevent unhandled connection errors during tests
+    class MockWebSocket {
+      onopen: () => void = () => {};
+      onclose: () => void = () => {};
+      onerror: (error: any) => void = () => {};
+      onmessage: (event: any) => void = () => {};
+      readyState: number = 0;
+      close() {}
+      send() {}
+      constructor() {
+        setTimeout(() => {
+          this.readyState = 1;
+          if (this.onopen) this.onopen();
+        }, 0);
+      }
+    }
+    (globalThis as any).WebSocket = MockWebSocket;
+
     // Mute specific console.warn/error during tests
     originalConsoleWarn = console.warn;
     console.warn = (...args) => {
