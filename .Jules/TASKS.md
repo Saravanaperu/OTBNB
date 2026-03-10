@@ -2,6 +2,15 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| QA-001 | Pending | High | Write basic unit tests for the core logic (Greeks, Risk, Option Chain). | QA Engineer | ARCH-004, ARCH-005, ARCH-006 |
+| QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
+| QA-003 | Pending | Medium | Increase test coverage for frontend (currently only `App.test.tsx` exists). | QA Engineer | None |
+| DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
+
+# Archive
+
+| ID | Status | Priority | Description | Assignee | Dependencies |
+|---|---|---|---|---|---|
 | DEV-001 | Completed | Medium | Build the Base Strategy class (`backend/strategies/base_strategy.py`). | Architect | ARCH-004, ARCH-007 |
 | DEV-002 | Completed | Medium | Implement Momentum Breakout Strategy (`backend/strategies/momentum_breakout.py`). | Developer | DEV-001 |
 | DEV-003 | Completed | Medium | Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`). | Developer | DEV-001 |
@@ -10,15 +19,9 @@
 | INT-001 | Completed | Low | Set up Email Service with HTML templating (`backend/alerts/email_service.py`). | Integrator | None |
 | DEV-009 | Completed | Medium | Use SQLite to persist trades history (`backend/storage/database.py`). | Developer | None |
 | INT-002 | Completed | High | Link frontend to backend endpoints (completed 2024-05-18). | Integrator | DEV-007, UX-001 |
-| QA-001 | Pending | High | Write basic unit tests for the core logic (Greeks, Risk, Option Chain). | QA Engineer | ARCH-004, ARCH-005, ARCH-006 |
-| QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
-| DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
 | TSK-001 | Completed | High | Implement CI/CD pipeline with GitHub Actions | Jules | None |
 | TSK-002 | Completed | High | Add Automerge step to CI/CD | Jules | TSK-001 |
 | TSK-003 | Completed | High | Add relevant tests to be run in CI/CD | Jules | TSK-001 |
-
-# Archive
-
 | ARCH-001 | Completed | High | Implement SmartAPI login & TOTP generation (`backend/bot/session_manager.py`). | Integrator | None |
 | ARCH-002 | Completed | High | Set up the WebSocket ticker for live market data (`backend/bot/feed_manager.py`). | Architect | ARCH-001 |
 | ARCH-003 | Completed | High | Implement Instrument Registry to pull active strike details (`backend/bot/instrument_registry.py`). | Architect | ARCH-001 |
