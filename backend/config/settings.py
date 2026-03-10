@@ -1,15 +1,22 @@
 import os
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+    PydanticBaseSettingsSource,
+    YamlConfigSettingsSource,
+)
 from pydantic import Field
 from typing import List, Tuple, Type
 
+
 class MarketSettings(BaseSettings):
-    open_time: str = '09:15'
-    bot_start_time: str = '09:20'
-    no_new_entry_after: str = '15:20'
-    square_off_time: str = '15:20'
-    eod_report_time: str = '15:35'
-    timezone: str = 'Asia/Kolkata'
+    open_time: str = "09:15"
+    bot_start_time: str = "09:20"
+    no_new_entry_after: str = "15:20"
+    square_off_time: str = "15:20"
+    eod_report_time: str = "15:35"
+    timezone: str = "Asia/Kolkata"
+
 
 class InstrumentSettings(BaseSettings):
     lot_size: int
@@ -19,15 +26,25 @@ class InstrumentSettings(BaseSettings):
     min_premium: int
     max_premium: int
 
+
 class InstrumentsConfig(BaseSettings):
     nifty: InstrumentSettings = InstrumentSettings(
-        lot_size=50, strike_interval=50, weekly_expiry_day='Thursday',
-        atm_strikes_range=5, min_premium=30, max_premium=300
+        lot_size=50,
+        strike_interval=50,
+        weekly_expiry_day="Thursday",
+        atm_strikes_range=5,
+        min_premium=30,
+        max_premium=300,
     )
     banknifty: InstrumentSettings = InstrumentSettings(
-        lot_size=15, strike_interval=100, weekly_expiry_day='Wednesday',
-        atm_strikes_range=5, min_premium=50, max_premium=600
+        lot_size=15,
+        strike_interval=100,
+        weekly_expiry_day="Wednesday",
+        atm_strikes_range=5,
+        min_premium=50,
+        max_premium=600,
     )
+
 
 class AppSettings(BaseSettings):
     # AngelOne Secrets
@@ -53,11 +70,11 @@ class AppSettings(BaseSettings):
     instruments: InstrumentsConfig = InstrumentsConfig()
 
     model_config = SettingsConfigDict(
-        env_file='.env',
-        env_file_encoding='utf-8',
-        yaml_file=os.path.join(os.path.dirname(__file__), 'settings.yaml'),
-        yaml_file_encoding='utf-8',
-        extra='ignore'
+        env_file=".env",
+        env_file_encoding="utf-8",
+        yaml_file=os.path.join(os.path.dirname(__file__), "settings.yaml"),
+        yaml_file_encoding="utf-8",
+        extra="ignore",
     )
 
     @classmethod
@@ -76,5 +93,6 @@ class AppSettings(BaseSettings):
             YamlConfigSettingsSource(settings_cls),
             file_secret_settings,
         )
+
 
 settings = AppSettings()

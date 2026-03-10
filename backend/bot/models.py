@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class Position(BaseModel):
     symbol: str
     token: str
@@ -10,6 +11,7 @@ class Position(BaseModel):
     current_price: float
     unrealized_pnl: float = 0.0
 
+
 class Signal(BaseModel):
     symbol: str
     token: str
@@ -18,6 +20,7 @@ class Signal(BaseModel):
     entry_price: float
     stop_loss: float
     target: float
+
 
 class MarketSnapshot(BaseModel):
     timestamp: float = 0.0
@@ -38,6 +41,7 @@ class MarketSnapshot(BaseModel):
     average_volume: float = 0.0
     previous_close: float = 0.0
     previous_open_interest: float = 0.0
+
 
 class ExitSignal(BaseModel):
     symbol: str

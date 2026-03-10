@@ -5,8 +5,10 @@ import structlog
 
 logger = structlog.get_logger()
 
+
 class SessionManager:
     """Manages connection and authentication with AngelOne SmartAPI."""
+
     def __init__(self):
         self.api_key = settings.angelone_api_key
         self.client_code = settings.angelone_client_code
@@ -30,12 +32,12 @@ class SessionManager:
             # Authenticate
             data = self.api.generateSession(self.client_code, self.password, totp)
 
-            if data['status'] == False:
-                logger.error("Login failed", message=data['message'])
+            if data["status"] == False:
+                logger.error("Login failed", message=data["message"])
                 raise Exception(f"Login failed: {data['message']}")
 
-            self.jwt_token = data['data']['jwtToken']
-            self.refresh_token = data['data']['refreshToken']
+            self.jwt_token = data["data"]["jwtToken"]
+            self.refresh_token = data["data"]["refreshToken"]
             self.feed_token = self.api.getfeedToken()
 
             self.is_connected = True

@@ -9,7 +9,7 @@
 | DEV-005 | Completed | Medium | Implement Signal Aggregator (`backend/strategies/signal_aggregator.py`). | Developer | DEV-002, DEV-003, DEV-004 |
 | INT-001 | Completed | Low | Set up Email Service with HTML templating (`backend/alerts/email_service.py`). | Integrator | None |
 | DEV-009 | Completed | Medium | Use SQLite to persist trades history (`backend/storage/database.py`). | Developer | None |
-| INT-002 | Pending | High | Link frontend to backend endpoints. | Integrator | DEV-007, UX-001 |
+| INT-002 | Completed | High | Link frontend to backend endpoints (completed 2024-05-18). | Integrator | DEV-007, UX-001 |
 | QA-001 | Pending | High | Write basic unit tests for the core logic (Greeks, Risk, Option Chain). | QA Engineer | ARCH-004, ARCH-005, ARCH-006 |
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |

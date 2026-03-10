@@ -9,6 +9,9 @@ export function useWebSocket() {
   const { setConnectionStatus } = useBotStore();
   const { addSignal, updatePosition, setOptionChain, setRiskBudget, setDailyPnL } = useMarketStore();
   const reconnectTimeoutRef = useRef<number | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const maxReconnectDelay = 30000;
+  const initialReconnectDelay = 1000;
 
   useEffect(() => {
     connect();
@@ -30,14 +33,23 @@ export function useWebSocket() {
 
     ws.current.onopen = () => {
       setConnectionStatus(true);
+      reconnectAttemptsRef.current = 0; // Reset attempts on successful connection
       console.log('WebSocket connected');
     };
 
     ws.current.onclose = () => {
       setConnectionStatus(false);
-      console.log('WebSocket disconnected. Reconnecting...');
-      // Reconnect with backoff
-      reconnectTimeoutRef.current = window.setTimeout(connect, 3000);
+
+      const attempts = reconnectAttemptsRef.current;
+      // Exponential backoff with a cap
+      const delay = Math.min(initialReconnectDelay * Math.pow(2, attempts), maxReconnectDelay);
+
+      console.log(`WebSocket disconnected. Reconnecting in ${delay}ms...`);
+
+      reconnectTimeoutRef.current = window.setTimeout(() => {
+        reconnectAttemptsRef.current += 1;
+        connect();
+      }, delay);
     };
 
     ws.current.onerror = (error) => {

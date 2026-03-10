@@ -5,8 +5,10 @@ from typing import Dict, Any, List
 
 logger = structlog.get_logger()
 
+
 class InstrumentRegistry:
     """Manages available instruments and option strikes."""
+
     def __init__(self):
         self.master_data: List[Dict[str, Any]] = []
         self.token_to_symbol: Dict[str, str] = {}
@@ -16,7 +18,7 @@ class InstrumentRegistry:
     async def load_master(self):
         """Loads the instrument master from broker API."""
         logger.info("Loading instrument master data...")
-        url = 'https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json'
+        url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, timeout=30.0)
@@ -25,7 +27,8 @@ class InstrumentRegistry:
 
                 # Filter for NIFTY and BANKNIFTY in NSE and NFO
                 filtered_data = [
-                    d for d in data
+                    d
+                    for d in data
                     if d.get("name") in ["NIFTY", "BANKNIFTY"]
                     and d.get("exch_seg") in ["NSE", "NFO"]
                 ]

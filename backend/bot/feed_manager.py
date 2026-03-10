@@ -6,13 +6,15 @@ from SmartApi.smartWebSocketV2 import SmartWebSocketV2
 
 logger = structlog.get_logger()
 
+
 class FeedManager:
     """Manages WebSocket connections and routes ticks to respective queues."""
+
     def __init__(self, session_manager):
         self.session_manager = session_manager
         self.queues: Dict[str, asyncio.Queue] = {
             "NIFTY": asyncio.Queue(),
-            "BANKNIFTY": asyncio.Queue()
+            "BANKNIFTY": asyncio.Queue(),
         }
         self.sws = None
         self.is_connected = False
@@ -32,20 +34,20 @@ class FeedManager:
         if symbol and self.loop:
             if "NIFTY" in symbol and "BANKNIFTY" not in symbol:
                 asyncio.run_coroutine_threadsafe(
-                    self.queues["NIFTY"].put(message),
-                    self.loop
+                    self.queues["NIFTY"].put(message), self.loop
                 )
             elif "BANKNIFTY" in symbol:
                 asyncio.run_coroutine_threadsafe(
-                    self.queues["BANKNIFTY"].put(message),
-                    self.loop
+                    self.queues["BANKNIFTY"].put(message), self.loop
                 )
 
     def _on_open(self, wsapp):
         logger.info("WebSocket connected successfully")
         self.is_connected = True
         if self.registry and self.loop:
-            asyncio.run_coroutine_threadsafe(self.subscribe_all_tokens(self.registry), self.loop)
+            asyncio.run_coroutine_threadsafe(
+                self.subscribe_all_tokens(self.registry), self.loop
+            )
 
     def _on_error(self, wsapp, error):
         logger.error("WebSocket error occurred", error=str(error))
@@ -67,7 +69,7 @@ class FeedManager:
             self.session_manager.jwt_token,
             self.session_manager.api_key,
             self.session_manager.client_code,
-            self.session_manager.feed_token
+            self.session_manager.feed_token,
         )
 
         # We start the connection in a separate thread so it doesn't block asyncio
@@ -76,7 +78,7 @@ class FeedManager:
                 on_data=self._on_data,
                 on_open=self._on_open,
                 on_error=self._on_error,
-                on_close=self._on_close
+                on_close=self._on_close,
             )
 
         threading.Thread(target=run_ws, daemon=True).start()

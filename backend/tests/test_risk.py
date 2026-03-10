@@ -1,11 +1,12 @@
 from unittest.mock import MagicMock
 from backend.bot.risk_manager import RiskManager
 
+
 def test_risk_manager_approve_success():
     rm = RiskManager(config={"daily_loss_limit": 5000, "max_open_positions": 5})
 
     mock_portfolio = MagicMock()
-    mock_portfolio.get_total_mtm.return_value = 1000 # positive pnl
+    mock_portfolio.get_total_mtm.return_value = 1000  # positive pnl
     mock_portfolio.get_open_trades_count.return_value = 2
 
     mock_signal = MagicMock()
@@ -13,11 +14,12 @@ def test_risk_manager_approve_success():
     approval = rm.approve(mock_signal, mock_portfolio)
     assert approval.ok is True
 
+
 def test_risk_manager_approve_loss_limit_breached():
     rm = RiskManager(config={"daily_loss_limit": 5000, "max_open_positions": 5})
 
     mock_portfolio = MagicMock()
-    mock_portfolio.get_total_mtm.return_value = -6000 # breached
+    mock_portfolio.get_total_mtm.return_value = -6000  # breached
     mock_portfolio.get_open_trades_count.return_value = 2
 
     mock_signal = MagicMock()
@@ -26,18 +28,20 @@ def test_risk_manager_approve_loss_limit_breached():
     assert approval.ok is False
     assert "loss limit breached" in approval.reason
 
+
 def test_risk_manager_approve_max_trades_breached():
     rm = RiskManager(config={"daily_loss_limit": 5000, "max_open_positions": 5})
 
     mock_portfolio = MagicMock()
     mock_portfolio.get_total_mtm.return_value = -1000
-    mock_portfolio.get_open_trades_count.return_value = 5 # reached max
+    mock_portfolio.get_open_trades_count.return_value = 5  # reached max
 
     mock_signal = MagicMock()
 
     approval = rm.approve(mock_signal, mock_portfolio)
     assert approval.ok is False
     assert "Max open positions reached" in approval.reason
+
 
 def test_risk_manager_size():
     rm = RiskManager(config={"risk_per_trade": 1000})
@@ -54,6 +58,7 @@ def test_risk_manager_size():
 
     size = rm.size(mock_signal, 15)
     assert size == 45
+
 
 def test_risk_manager_size_minimum():
     rm = RiskManager(config={"risk_per_trade": 1000})

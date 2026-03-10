@@ -7,6 +7,7 @@ from backend.storage.repositories import TradeRepository
 router = APIRouter()
 repo = TradeRepository()
 
+
 @router.get("/", response_model=List[Trade])
 async def get_trades(target_date: Optional[date] = Query(None, alias="date")):
     """Full trade log for a given date"""
@@ -33,17 +34,13 @@ async def get_trades(target_date: Optional[date] = Query(None, alias="date")):
             strategy_name=t.strategy_name,
             order_id_entry=t.order_id_entry,
             order_id_exit=t.order_id_exit,
-            status=t.status
+            status=t.status,
         )
         for t in db_trades
     ]
 
+
 @router.get("/stats", response_model=PerformanceStats)
 async def get_trade_stats():
     """Win rate, profit factor, avg R:R, Sharpe (rolling 30d)"""
-    return {
-        "win_rate": 0.0,
-        "profit_factor": 0.0,
-        "avg_rr": 0.0,
-        "sharpe": 0.0
-    }
+    return {"win_rate": 0.0, "profit_factor": 0.0, "avg_rr": 0.0, "sharpe": 0.0}

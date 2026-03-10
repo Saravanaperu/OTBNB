@@ -5,6 +5,7 @@ from datetime import datetime
 
 router = APIRouter()
 
+
 class WSManager:
     def __init__(self):
         self.connections: List[WebSocket] = []
@@ -14,11 +15,9 @@ class WSManager:
         self.connections.append(ws)
 
     async def broadcast(self, event_type: str, payload: dict):
-        msg = json.dumps({
-            'event': event_type,
-            'data': payload,
-            'ts': datetime.now().isoformat()
-        })
+        msg = json.dumps(
+            {"event": event_type, "data": payload, "ts": datetime.now().isoformat()}
+        )
         dead = []
         for ws in self.connections:
             try:
@@ -28,9 +27,11 @@ class WSManager:
         for ws in dead:
             self.connections.remove(ws)
 
+
 ws_manager = WSManager()
 
-@router.websocket('/live')
+
+@router.websocket("/live")
 async def ws_endpoint(websocket: WebSocket, token: str = Query(...)):
     # Mock token validation
     # if token != settings.DASHBOARD_TOKEN:
