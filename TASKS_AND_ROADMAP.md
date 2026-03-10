@@ -41,7 +41,7 @@
 - [x] Finalize configuration panels to adjust bot settings from UI.
 
 ## Phase 6: System Integration & Testing
-- [ ] Link frontend to backend endpoints.
-- [ ] Write basic unit tests for the core logic (Greeks, Risk, Option Chain).
+- [x] Link frontend to backend endpoints.
+- [x] Write basic unit tests for the core logic (Greeks, Risk, Option Chain).
 - [ ] Run bot with simulated ticks to verify system stability and order logic without money.
 - [ ] Document final setup instructions.
