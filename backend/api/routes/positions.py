@@ -57,11 +57,11 @@ async def get_positions():
 @router.get("/history", response_model=List[ClosedPosition])
 async def get_positions_history():
     """All closed positions for today with exit reason"""
-    trades = await repo.get_all_trades(limit=1000)
-    closed = []
     today = datetime.now().date()
+    trades = await repo.get_all_trades(limit=1000, target_date=today)
+    closed = []
     for t in trades:
-        if t.status == "CLOSED" and t.exit_time and t.exit_time.date() == today:
+        if t.status == "CLOSED":
             closed.append(
                 ClosedPosition(
                     position_id=t.id,
