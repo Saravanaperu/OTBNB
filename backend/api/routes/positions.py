@@ -11,9 +11,8 @@ repo = TradeRepository()
 @router.get("/", response_model=List[PositionSchema])
 async def get_positions():
     """All currently open positions with live P&L"""
-    from backend.main import get_bot_state
+    from backend.main import bot_state
 
-    bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
     if not pm:
         return []
@@ -98,9 +97,8 @@ async def get_positions_history():
 @router.get("/{id}", response_model=PositionSchema)
 async def get_position(id: str):
     """Single position detail including full Greeks"""
-    from backend.main import get_bot_state
+    from backend.main import bot_state
 
-    bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
     if pm and id in pm.positions:
         pos = pm.positions[id].position
@@ -138,10 +136,9 @@ async def get_position(id: str):
 @router.post("/{id}/exit")
 async def exit_position(id: str):
     """Manually trigger exit for a specific position"""
-    from backend.main import get_bot_state
+    from backend.main import bot_state
     from backend.bot.models import ExitSignal
 
-    bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
     engine = bot_state.get("execution_engine")
 

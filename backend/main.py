@@ -5,6 +5,8 @@ import datetime
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi import Request
 import uvicorn
 
 from backend.config.settings import settings
@@ -48,6 +50,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception", exc_info=exc, path=request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred."},
+    )
+
+
 # Global bot state
 bot_state: Dict[str, Any] = {
     "status": "STOPPED",
@@ -58,10 +70,6 @@ bot_state: Dict[str, Any] = {
     "execution_engine": None,
     "bot_engine": None,
 }
-
-
-def get_bot_state():
-    return bot_state
 
 
 @asynccontextmanager

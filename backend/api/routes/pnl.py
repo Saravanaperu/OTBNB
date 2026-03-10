@@ -9,9 +9,8 @@ router = APIRouter()
 async def get_pnl_today():
     """Today's realised + unrealised P&L, win rate, trade count"""
     import datetime
-    from backend.main import get_bot_state
+    from backend.main import bot_state
 
-    bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
 
     net_pnl = pm.get_total_mtm() if pm else 0.0

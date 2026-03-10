@@ -6,9 +6,8 @@ router = APIRouter()
 
 
 def get_chain_snapshot_mapped(instrument: str) -> dict:
-    from backend.main import get_bot_state
+    from backend.main import bot_state
 
-    bot_state = get_bot_state()
     ocm = bot_state.get("option_chain_manager")
     if not ocm:
         return {
