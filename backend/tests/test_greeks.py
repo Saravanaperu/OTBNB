@@ -1,22 +1,13 @@
 import pytest
 from backend.bot.greeks_engine import GreeksEngine
 
+
 def test_greeks_engine_refresh():
     engine = GreeksEngine()
 
     snapshot = {
-        "12345": {
-            "token": "12345",
-            "ltp": 150.0,
-            "strike": 22000,
-            "option_type": "c"
-        },
-        "67890": {
-            "token": "67890",
-            "ltp": 120.0,
-            "strike": 22000,
-            "option_type": "p"
-        }
+        "12345": {"token": "12345", "ltp": 150.0, "strike": 22000, "option_type": "c"},
+        "67890": {"token": "67890", "ltp": 120.0, "strike": 22000, "option_type": "p"},
     }
 
     # Current spot 22000, 10 days to expiry (10/365 approx 0.0274)
@@ -51,30 +42,22 @@ def test_greeks_engine_refresh():
     assert pe_opt["theta"] is not None
     assert pe_opt["vega"] is not None
 
+
 def test_greeks_engine_zero_dte():
     engine = GreeksEngine()
     snapshot = {
-        "12345": {
-            "token": "12345",
-            "ltp": 150.0,
-            "strike": 22000,
-            "option_type": "c"
-        }
+        "12345": {"token": "12345", "ltp": 150.0, "strike": 22000, "option_type": "c"}
     }
 
     engine.refresh(snapshot, 22000.0, 0.0)
 
     assert "iv" not in snapshot["12345"]
 
+
 def test_greeks_engine_invalid_data():
     engine = GreeksEngine()
     snapshot = {
-        "12345": {
-            "token": "12345",
-            "ltp": None,
-            "strike": 22000,
-            "option_type": "c"
-        }
+        "12345": {"token": "12345", "ltp": None, "strike": 22000, "option_type": "c"}
     }
 
     engine.refresh(snapshot, 22000.0, 0.05)

@@ -2,6 +2,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
 
+
 class Position(BaseModel):
     position_id: str
     instrument: str
@@ -27,11 +28,13 @@ class Position(BaseModel):
     status: str
     strategy_name: str
 
+
 class ClosedPosition(Position):
     exit_price: float
     exit_time: datetime
     exit_reason: str
     realised_pnl: float
+
 
 class DailyPnL(BaseModel):
     date: str
@@ -40,6 +43,7 @@ class DailyPnL(BaseModel):
     gross_profit: float
     gross_loss: float
     net_pnl: float
+
 
 class Trade(BaseModel):
     id: str
@@ -64,11 +68,13 @@ class Trade(BaseModel):
     order_id_exit: Optional[str]
     status: str
 
+
 class PerformanceStats(BaseModel):
     win_rate: float
     profit_factor: float
     avg_rr: float
     sharpe: float
+
 
 class OptionData(BaseModel):
     ltp: float
@@ -83,9 +89,11 @@ class OptionData(BaseModel):
     oi_change: int
     volume: int
 
+
 class StrikeData(BaseModel):
     CE: OptionData
     PE: OptionData
+
 
 class OptionChain(BaseModel):
     instrument: str
@@ -101,10 +109,12 @@ class OptionChain(BaseModel):
     iv_percentile: float
     strikes: Dict[int, StrikeData]
 
+
 class RiskBudget(BaseModel):
     daily_loss_used: float
     remaining_budget: float
     open_position_count: int
+
 
 class RiskConfig(BaseModel):
     daily_hard_limit: float
@@ -123,6 +133,7 @@ class RiskConfig(BaseModel):
     max_bid_ask_spread_pct: float
     no_trade_after: str
     no_0dte_after: str
+
 
 class StrategyConfig(BaseModel):
     name: str

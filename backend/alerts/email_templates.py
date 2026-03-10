@@ -55,13 +55,13 @@ templates = {
         <p><strong>Time:</strong> {{ time }}</p>
       </body>
     </html>
-    """
+    """,
 }
 
 env = Environment(
-    loader=DictLoader(templates),
-    autoescape=select_autoescape(['html', 'xml'])
+    loader=DictLoader(templates), autoescape=select_autoescape(["html", "xml"])
 )
+
 
 def get_template(name: str):
     return env.get_template(name)

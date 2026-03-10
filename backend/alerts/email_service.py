@@ -8,6 +8,7 @@ from backend.alerts.email_templates import get_template
 
 logger = structlog.get_logger()
 
+
 class EmailService:
     def __init__(self):
         self.hostname = "smtp.gmail.com"
@@ -18,7 +19,9 @@ class EmailService:
 
     async def send_email(self, subject: str, html_content: str) -> bool:
         if self.username == "dummy@gmail.com":
-            logger.warning("Email service not configured. Skipping email send.", subject=subject)
+            logger.warning(
+                "Email service not configured. Skipping email send.", subject=subject
+            )
             return False
 
         message = EmailMessage()
@@ -34,7 +37,7 @@ class EmailService:
                 port=self.port,
                 username=self.username,
                 password=self.password,
-                use_tls=True
+                use_tls=True,
             )
             logger.info("Email sent successfully", subject=subject)
             return True

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.storage.database import TradeModel, AsyncSessionLocal
 from backend.api.schemas import Trade
 
+
 class TradeRepository:
     async def add_trade(self, trade: Trade) -> TradeModel:
         async with AsyncSessionLocal() as session:
@@ -22,17 +23,19 @@ class TradeRepository:
             )
             return result.scalar_one_or_none()
 
-    async def get_all_trades(self, limit: int = 100, skip: int = 0, target_date: Optional['date'] = None) -> List[TradeModel]:
+    async def get_all_trades(
+        self, limit: int = 100, skip: int = 0, target_date: Optional["date"] = None
+    ) -> List[TradeModel]:
         from datetime import date
+
         async with AsyncSessionLocal() as session:
             query = select(TradeModel)
             if target_date:
                 from sqlalchemy import cast, Date
+
                 query = query.where(cast(TradeModel.entry_time, Date) == target_date)
 
-            result = await session.execute(
-                query.offset(skip).limit(limit)
-            )
+            result = await session.execute(query.offset(skip).limit(limit))
             return result.scalars().all()
 
     async def update_trade(self, trade_id: str, updates: dict) -> Optional[TradeModel]:

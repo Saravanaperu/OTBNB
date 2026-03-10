@@ -21,7 +21,7 @@ active_risk_config = {
     "min_strike_oi": 10000,
     "max_bid_ask_spread_pct": 3.0,
     "no_trade_after": "15:20",
-    "no_0dte_after": "13:00"
+    "no_0dte_after": "13:00",
 }
 
 active_strategies = [
@@ -29,14 +29,16 @@ active_strategies = [
         "name": "momentum_breakout",
         "enabled": True,
         "instruments": ["NIFTY", "BANKNIFTY"],
-        "params": {}
+        "params": {},
     }
 ]
+
 
 @router.get("/risk", response_model=RiskConfig)
 async def get_risk_config():
     """Current risk parameters"""
     return active_risk_config
+
 
 @router.put("/risk", response_model=RiskConfig)
 async def update_risk_config(config: RiskConfig):
@@ -45,10 +47,12 @@ async def update_risk_config(config: RiskConfig):
     active_risk_config = config.dict()
     return active_risk_config
 
+
 @router.get("/strategies", response_model=List[StrategyConfig])
 async def get_strategies():
     """Strategy list with enabled/disabled status"""
     return active_strategies
+
 
 @router.put("/strategies/{name}", response_model=StrategyConfig)
 async def update_strategy(name: str, config: StrategyConfig):

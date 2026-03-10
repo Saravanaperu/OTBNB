@@ -4,6 +4,7 @@ from backend.api.schemas import DailyPnL
 
 router = APIRouter()
 
+
 @router.get("/today", response_model=DailyPnL)
 async def get_pnl_today():
     """Today's realised + unrealised P&L, win rate, trade count"""
@@ -22,8 +23,9 @@ async def get_pnl_today():
         "win_count": 0,
         "gross_profit": 0.0,
         "gross_loss": 0.0,
-        "net_pnl": net_pnl
+        "net_pnl": net_pnl,
     }
+
 
 @router.get("/history", response_model=List[DailyPnL])
 async def get_pnl_history(days: int = 30):

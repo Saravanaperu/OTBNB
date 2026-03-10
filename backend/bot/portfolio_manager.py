@@ -5,8 +5,10 @@ from backend.bot.models import Position
 
 logger = structlog.get_logger()
 
+
 class PortfolioManager:
     """Manages the overall portfolio of positions and tracks MTM."""
+
     def __init__(self):
         self.positions: Dict[str, PositionManager] = {}  # token -> PositionManager
         self.realized_pnl: float = 0.0
@@ -14,7 +16,9 @@ class PortfolioManager:
     def add_position(self, position: Position):
         """Adds a new position to the portfolio."""
         if position.token in self.positions:
-            logger.warning(f"Position for token {position.token} already exists, ignoring.")
+            logger.warning(
+                f"Position for token {position.token} already exists, ignoring."
+            )
             return
 
         self.positions[position.token] = PositionManager(position)

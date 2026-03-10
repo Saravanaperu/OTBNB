@@ -3,18 +3,21 @@ from typing import Dict, Any
 
 logger = structlog.get_logger()
 
+
 class RiskApproval:
     def __init__(self, ok: bool, reason: str = ""):
         self.ok = ok
         self.reason = reason
 
+
 class RiskManager:
     """Evaluates trades against risk constraints."""
+
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
-        self.max_loss = self.config.get('daily_loss_limit', 5000)
-        self.max_trades = self.config.get('max_open_positions', 5)
-        self.risk_per_trade = self.config.get('risk_per_trade', 1000)
+        self.max_loss = self.config.get("daily_loss_limit", 5000)
+        self.max_trades = self.config.get("max_open_positions", 5)
+        self.risk_per_trade = self.config.get("risk_per_trade", 1000)
 
     def approve(self, signal: Any, portfolio: Any) -> RiskApproval:
         """Approves or rejects a signal."""

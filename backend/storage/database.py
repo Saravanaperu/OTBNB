@@ -6,11 +6,10 @@ from sqlalchemy import Column, String, Float, Integer, DateTime
 from backend.config.settings import settings
 
 engine = create_async_engine(settings.database_url, echo=False)
-AsyncSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()
+
 
 class TradeModel(Base):
     __tablename__ = "trades"
@@ -36,6 +35,7 @@ class TradeModel(Base):
     order_id_entry = Column(String)
     order_id_exit = Column(String, nullable=True)
     status = Column(String)
+
 
 async def init_db():
     async with engine.begin() as conn:

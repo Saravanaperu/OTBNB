@@ -7,10 +7,12 @@ from backend.storage.repositories import TradeRepository
 router = APIRouter()
 repo = TradeRepository()
 
+
 @router.get("/", response_model=List[PositionSchema])
 async def get_positions():
     """All currently open positions with live P&L"""
     from backend.main import get_bot_state
+
     bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
     if not pm:
@@ -19,31 +21,38 @@ async def get_positions():
     positions_out = []
     for token, pos_mgr in pm.positions.items():
         pos = pos_mgr.position
-        positions_out.append(PositionSchema(
-            position_id=pos.token,
-            instrument="NIFTY" if "NIFTY" in pos.symbol and "BANKNIFTY" not in pos.symbol else "BANKNIFTY",
-            tradingsymbol=pos.symbol,
-            token=pos.token,
-            direction=pos.side,
-            strike=0,
-            expiry="",
-            entry_price=pos.entry_price,
-            entry_time=datetime.now(),
-            lots=1,
-            lot_size=1,
-            quantity=pos.quantity,
-            sl_price=0.0,
-            target_price=0.0,
-            trailing_sl_active=False,
-            trailing_sl_price=0.0,
-            peak_price=0.0,
-            current_ltp=pos.current_price,
-            unrealised_pnl=pos.unrealized_pnl,
-            unrealised_pnl_pct=0.0,
-            status="OPEN",
-            strategy_name="Manual"
-        ))
+        positions_out.append(
+            PositionSchema(
+                position_id=pos.token,
+                instrument=(
+                    "NIFTY"
+                    if "NIFTY" in pos.symbol and "BANKNIFTY" not in pos.symbol
+                    else "BANKNIFTY"
+                ),
+                tradingsymbol=pos.symbol,
+                token=pos.token,
+                direction=pos.side,
+                strike=0,
+                expiry="",
+                entry_price=pos.entry_price,
+                entry_time=datetime.now(),
+                lots=1,
+                lot_size=1,
+                quantity=pos.quantity,
+                sl_price=0.0,
+                target_price=0.0,
+                trailing_sl_active=False,
+                trailing_sl_price=0.0,
+                peak_price=0.0,
+                current_ltp=pos.current_price,
+                unrealised_pnl=pos.unrealized_pnl,
+                unrealised_pnl_pct=0.0,
+                status="OPEN",
+                strategy_name="Manual",
+            )
+        )
     return positions_out
+
 
 @router.get("/history", response_model=List[ClosedPosition])
 async def get_positions_history():
@@ -53,47 +62,55 @@ async def get_positions_history():
     today = datetime.now().date()
     for t in trades:
         if t.status == "CLOSED" and t.exit_time and t.exit_time.date() == today:
-            closed.append(ClosedPosition(
-                position_id=t.id,
-                instrument=t.instrument,
-                tradingsymbol=t.tradingsymbol,
-                token=t.id,
-                direction=t.direction,
-                strike=t.strike,
-                expiry=t.expiry,
-                entry_price=t.entry_price,
-                entry_time=t.entry_time,
-                lots=t.lots,
-                lot_size=1,
-                quantity=t.quantity,
-                sl_price=0.0,
-                target_price=0.0,
-                trailing_sl_active=False,
-                trailing_sl_price=0.0,
-                peak_price=0.0,
-                current_ltp=t.exit_price or 0.0,
-                unrealised_pnl=0.0,
-                unrealised_pnl_pct=0.0,
-                status="CLOSED",
-                strategy_name=t.strategy_name,
-                exit_price=t.exit_price or 0.0,
-                exit_time=t.exit_time,
-                exit_reason=t.exit_reason or "Unknown",
-                realised_pnl=t.realised_pnl or 0.0
-            ))
+            closed.append(
+                ClosedPosition(
+                    position_id=t.id,
+                    instrument=t.instrument,
+                    tradingsymbol=t.tradingsymbol,
+                    token=t.id,
+                    direction=t.direction,
+                    strike=t.strike,
+                    expiry=t.expiry,
+                    entry_price=t.entry_price,
+                    entry_time=t.entry_time,
+                    lots=t.lots,
+                    lot_size=1,
+                    quantity=t.quantity,
+                    sl_price=0.0,
+                    target_price=0.0,
+                    trailing_sl_active=False,
+                    trailing_sl_price=0.0,
+                    peak_price=0.0,
+                    current_ltp=t.exit_price or 0.0,
+                    unrealised_pnl=0.0,
+                    unrealised_pnl_pct=0.0,
+                    status="CLOSED",
+                    strategy_name=t.strategy_name,
+                    exit_price=t.exit_price or 0.0,
+                    exit_time=t.exit_time,
+                    exit_reason=t.exit_reason or "Unknown",
+                    realised_pnl=t.realised_pnl or 0.0,
+                )
+            )
     return closed
+
 
 @router.get("/{id}", response_model=PositionSchema)
 async def get_position(id: str):
     """Single position detail including full Greeks"""
     from backend.main import get_bot_state
+
     bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
     if pm and id in pm.positions:
         pos = pm.positions[id].position
         return PositionSchema(
             position_id=pos.token,
-            instrument="NIFTY" if "NIFTY" in pos.symbol and "BANKNIFTY" not in pos.symbol else "BANKNIFTY",
+            instrument=(
+                "NIFTY"
+                if "NIFTY" in pos.symbol and "BANKNIFTY" not in pos.symbol
+                else "BANKNIFTY"
+            ),
             tradingsymbol=pos.symbol,
             token=pos.token,
             direction=pos.side,
@@ -113,14 +130,16 @@ async def get_position(id: str):
             unrealised_pnl=pos.unrealized_pnl,
             unrealised_pnl_pct=0.0,
             status="OPEN",
-            strategy_name="Manual"
+            strategy_name="Manual",
         )
     raise HTTPException(status_code=404, detail="Position not found")
+
 
 @router.post("/{id}/exit")
 async def exit_position(id: str):
     """Manually trigger exit for a specific position"""
     from backend.main import get_bot_state
+
     bot_state = get_bot_state()
     pm = bot_state.get("portfolio_manager")
     if pm and id in pm.positions:

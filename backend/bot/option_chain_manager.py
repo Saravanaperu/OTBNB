@@ -3,15 +3,17 @@ from typing import Dict, Any
 
 logger = structlog.get_logger()
 
+
 class OptionChainManager:
     """Manages live option chain state."""
+
     def __init__(self, registry):
         self.registry = registry
         self.chain_state: Dict[str, Any] = {}
 
     def update(self, instrument: str, tick: Dict[str, Any]):
         """Updates the option chain with a new tick."""
-        token = tick.get('token')
+        token = tick.get("token")
         if not token:
             return
 

@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 from backend.bot.option_chain_manager import OptionChainManager
 
+
 def test_option_chain_manager_update():
     mock_registry = MagicMock()
     manager = OptionChainManager(mock_registry)
@@ -22,6 +23,7 @@ def test_option_chain_manager_update():
     assert snapshot["100"]["volume"] == 1000
     assert snapshot["200"]["ltp"] == 60.0
 
+
 def test_option_chain_manager_update_no_token():
     mock_registry = MagicMock()
     manager = OptionChainManager(mock_registry)
@@ -33,6 +35,7 @@ def test_option_chain_manager_update_no_token():
     snapshot = manager.get_snapshot("NIFTY")
 
     assert len(snapshot) == 0
+
 
 def test_option_chain_manager_get_snapshot_empty():
     mock_registry = MagicMock()
