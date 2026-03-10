@@ -18,6 +18,7 @@ from backend.alerts.email_templates import get_template
 from backend.bot.portfolio_manager import PortfolioManager
 from backend.bot.instrument_registry import InstrumentRegistry
 from backend.bot.option_chain_manager import OptionChainManager
+from backend.bot.execution_engine import ExecutionEngine
 
 # Setup centralized logging before other initializations
 setup_logging()
@@ -46,6 +47,7 @@ bot_state: Dict[str, Any] = {
     "email_service": None,
     "portfolio_manager": None,
     "option_chain_manager": None,
+    "execution_engine": None,
 }
 
 
@@ -69,6 +71,7 @@ async def lifespan(app: FastAPI):
     bot_state["portfolio_manager"] = PortfolioManager()
     registry = InstrumentRegistry()
     bot_state["option_chain_manager"] = OptionChainManager(registry)
+    bot_state["execution_engine"] = ExecutionEngine(bot_state["session_manager"])
 
     # Send bot start alert
     html_content = get_template("bot_start").render(
