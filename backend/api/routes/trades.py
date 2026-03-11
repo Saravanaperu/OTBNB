@@ -50,7 +50,8 @@ async def get_trade_stats():
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
     closed_trades = [
-        t for t in db_trades
+        t
+        for t in db_trades
         if t.status == "CLOSED" and t.exit_time and t.exit_time >= thirty_days_ago
     ]
 
@@ -65,15 +66,23 @@ async def get_trade_stats():
     gross_profit = sum(t.realised_pnl for t in winning_trades)
     gross_loss = abs(sum(t.realised_pnl for t in losing_trades))
 
-    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf') if gross_profit > 0 else 0.0
-    if profit_factor == float('inf'):
+    profit_factor = (
+        gross_profit / gross_loss
+        if gross_loss > 0
+        else float("inf") if gross_profit > 0 else 0.0
+    )
+    if profit_factor == float("inf"):
         profit_factor = 999.0  # Cap or keep reasonable for json response
 
     avg_profit = gross_profit / len(winning_trades) if winning_trades else 0.0
     avg_loss = gross_loss / len(losing_trades) if losing_trades else 0.0
 
-    avg_rr = avg_profit / avg_loss if avg_loss > 0 else float('inf') if avg_profit > 0 else 0.0
-    if avg_rr == float('inf'):
+    avg_rr = (
+        avg_profit / avg_loss
+        if avg_loss > 0
+        else float("inf") if avg_profit > 0 else 0.0
+    )
+    if avg_rr == float("inf"):
         avg_rr = 999.0
 
     # Group PnL by date for Sharpe ratio (daily returns)
@@ -95,5 +104,5 @@ async def get_trade_stats():
         "win_rate": round(win_rate, 4),
         "profit_factor": round(profit_factor, 4),
         "avg_rr": round(avg_rr, 4),
-        "sharpe": round(sharpe, 4)
+        "sharpe": round(sharpe, 4),
     }
