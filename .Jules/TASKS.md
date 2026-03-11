@@ -7,9 +7,16 @@
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
 | DEV-012 | Pending | High | Integrate refresh_session logic into the bot lifecycle (e.g., scheduled token refresh). | Developer | INT-005 |
 | QA-006 | Pending | High | Increase backend test coverage for `bot_engine.py` and `execution_engine.py` modules. | QA Engineer | None |
-| DEV-013 | Pending | Medium | Implement automated error recovery and notification for backend exceptions. | Developer | ARCH-010 |
 
 # Archive
+
+| ID | Status | Priority | Description | Assignee | Dependencies |
+|---|---|---|---|---|---|
+| ARCH-011 | Done (2026-03-12) | Medium | Implement automated error recovery and notification for backend exceptions. | Architect | ARCH-010 |
+
+| ID | Status | Priority | Description | Assignee | Dependencies |
+|---|---|---|---|---|---|
+| DEV-013 | Closed (Duplicate of ARCH-011) | Medium | Implement automated error recovery and notification for backend exceptions. | Developer | ARCH-010 |
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|

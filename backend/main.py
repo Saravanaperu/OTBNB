@@ -54,6 +54,12 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error("Unhandled exception", exc_info=exc, path=request.url.path)
+
+    email_service = bot_state.get("email_service")
+    if email_service:
+        error_msg = f"Unhandled exception at {request.url.path}: {str(exc)}"
+        asyncio.create_task(email_service.send_error_alert(error_msg))
+
     return JSONResponse(
         status_code=500,
         content={"detail": "An internal server error occurred."},
@@ -114,6 +120,7 @@ async def lifespan(app: FastAPI):
         execution_engine=bot_state["execution_engine"],
         risk_manager=risk_manager,
         aggregators={"NIFTY": nifty_agg, "BANKNIFTY": bnf_agg},
+        email_service=email_service,
     )
     bot_state["bot_engine"] = bot_engine
 

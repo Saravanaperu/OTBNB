@@ -29,6 +29,7 @@ class BotEngine:
         execution_engine: ExecutionEngine,
         risk_manager: RiskManager,
         aggregators: Dict[str, SignalAggregator],
+        email_service=None,
     ):
         self.feed_manager = feed_manager
         self.option_chain_manager = option_chain_manager
@@ -37,6 +38,7 @@ class BotEngine:
         self.execution_engine = execution_engine
         self.risk_manager = risk_manager
         self.aggregators = aggregators
+        self.email_service = email_service
         self._running = False
         self._tasks: List[asyncio.Task] = []
 
@@ -152,6 +154,14 @@ class BotEngine:
                         error=str(e),
                         exc_info=True,
                     )
+                    if self.email_service:
+                        error_msg = f"BotEngine error for {instrument}: {str(e)}"
+                        asyncio.create_task(
+                            self.email_service.send_error_alert(error_msg)
+                        )
+
+                    # Prevent tight loop on repeated errors
+                    await asyncio.sleep(1)
 
         except asyncio.CancelledError:
             logger.info(f"Processing loop cancelled for {instrument}")
