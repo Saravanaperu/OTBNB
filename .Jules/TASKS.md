@@ -11,6 +11,7 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| OPS-003 | Done (2025-03-11) | Medium | Create runbooks for common operational tasks (Makefile) and database disaster recovery scripts. | Ops | None |
 | UI-009 | Done (2026-03-11) | Medium | Replace placeholder Positions page with a dedicated component. | UIMaster | None |
 | DEV-011 | Done (2026-03-11) | High | Implement real trade stats in `/api/v1/trades/stats`. | Developer | None |
 | QA-005 | Done (2026-03-10) | Medium | Fix unhandled WebSocket error in frontend tests (`App.test.tsx`). | Developer | None |
