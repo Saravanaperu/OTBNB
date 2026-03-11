@@ -120,6 +120,7 @@ async def lifespan(app: FastAPI):
         execution_engine=bot_state["execution_engine"],
         risk_manager=risk_manager,
         aggregators={"NIFTY": nifty_agg, "BANKNIFTY": bnf_agg},
+        session_manager=bot_state.get("session_manager"),
         email_service=email_service,
     )
     bot_state["bot_engine"] = bot_engine
