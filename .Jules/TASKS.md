@@ -10,6 +10,7 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| DOC-002 | Done (2026-03-11) | High | Generate OpenAPI specification and setup Swagger UI. | Tech Writer | None |
 | QA-004 | Done (2026-03-11) | High | Increase test coverage for backend core components. | QA Engineer | None |
 | OPS-003 | Done (2025-03-11) | Medium | Create runbooks for common operational tasks (Makefile) and database disaster recovery scripts. | Ops | None |
 | UI-009 | Done (2026-03-11) | Medium | Replace placeholder Positions page with a dedicated component. | UIMaster | None |

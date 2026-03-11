@@ -1,0 +1,1465 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Options Buying Bot API",
+    "description": "FastAPI backend for NIFTY/BANKNIFTY Options Trading Bot",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/v1/status/health": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_api_v1_status_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status/": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Get Status",
+        "operationId": "get_status_api_v1_status__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status/bot/pause": {
+      "post": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Pause Bot",
+        "operationId": "pause_bot_api_v1_status_bot_pause_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status/bot/resume": {
+      "post": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Resume Bot",
+        "operationId": "resume_bot_api_v1_status_bot_resume_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status/bot/emergency_exit": {
+      "post": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Emergency Exit",
+        "operationId": "emergency_exit_api_v1_status_bot_emergency_exit_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Positions",
+        "description": "All currently open positions with live P&L",
+        "operationId": "get_positions_api_v1_positions__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Position"
+                  },
+                  "type": "array",
+                  "title": "Response Get Positions Api V1 Positions  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/history": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Positions History",
+        "description": "All closed positions for today with exit reason",
+        "operationId": "get_positions_history_api_v1_positions_history_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClosedPosition"
+                  },
+                  "type": "array",
+                  "title": "Response Get Positions History Api V1 Positions History Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/{id}": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Position",
+        "description": "Single position detail including full Greeks",
+        "operationId": "get_position_api_v1_positions__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Position"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/{id}/exit": {
+      "post": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Exit Position",
+        "description": "Manually trigger exit for a specific position",
+        "operationId": "exit_position_api_v1_positions__id__exit_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pnl/today": {
+      "get": {
+        "tags": [
+          "PnL"
+        ],
+        "summary": "Get Pnl Today",
+        "description": "Today's realised + unrealised P&L, win rate, trade count",
+        "operationId": "get_pnl_today_api_v1_pnl_today_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyPnL"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pnl/history": {
+      "get": {
+        "tags": [
+          "PnL"
+        ],
+        "summary": "Get Pnl History",
+        "description": "Historical daily P&L for charting",
+        "operationId": "get_pnl_history_api_v1_pnl_history_get",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DailyPnL"
+                  },
+                  "title": "Response Get Pnl History Api V1 Pnl History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trades/": {
+      "get": {
+        "tags": [
+          "Trades"
+        ],
+        "summary": "Get Trades",
+        "description": "Full trade log for a given date",
+        "operationId": "get_trades_api_v1_trades__get",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Trade"
+                  },
+                  "title": "Response Get Trades Api V1 Trades  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trades/stats": {
+      "get": {
+        "tags": [
+          "Trades"
+        ],
+        "summary": "Get Trade Stats",
+        "description": "Win rate, profit factor, avg R:R, Sharpe (rolling 30d)",
+        "operationId": "get_trade_stats_api_v1_trades_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerformanceStats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chain/nifty": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Get Chain Nifty",
+        "description": "Live NIFTY option chain",
+        "operationId": "get_chain_nifty_api_v1_chain_nifty_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionChain"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chain/banknifty": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Get Chain Banknifty",
+        "description": "Live BANKNIFTY option chain",
+        "operationId": "get_chain_banknifty_api_v1_chain_banknifty_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionChain"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vix": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Get Vix",
+        "description": "India VIX and IV Rank for both instruments",
+        "operationId": "get_vix_api_v1_vix_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spot": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Get Spot",
+        "description": "Current spot prices for both indices",
+        "operationId": "get_spot_api_v1_spot_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config/risk": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Get Risk Config",
+        "description": "Current risk parameters",
+        "operationId": "get_risk_config_api_v1_config_risk_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskConfig"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Update Risk Config",
+        "description": "Update risk parameters at runtime (hot reload)",
+        "operationId": "update_risk_config_api_v1_config_risk_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config/strategies": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Get Strategies",
+        "description": "Strategy list with enabled/disabled status",
+        "operationId": "get_strategies_api_v1_config_strategies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StrategyConfig"
+                  },
+                  "type": "array",
+                  "title": "Response Get Strategies Api V1 Config Strategies Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config/strategies/{name}": {
+      "put": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Update Strategy",
+        "description": "Enable or disable a specific strategy at runtime",
+        "operationId": "update_strategy_api_v1_config_strategies__name__put",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StrategyConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategyConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClosedPosition": {
+        "properties": {
+          "position_id": {
+            "type": "string",
+            "title": "Position Id"
+          },
+          "instrument": {
+            "type": "string",
+            "title": "Instrument"
+          },
+          "tradingsymbol": {
+            "type": "string",
+            "title": "Tradingsymbol"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction"
+          },
+          "strike": {
+            "type": "integer",
+            "title": "Strike"
+          },
+          "expiry": {
+            "type": "string",
+            "title": "Expiry"
+          },
+          "entry_price": {
+            "type": "number",
+            "title": "Entry Price"
+          },
+          "entry_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Entry Time"
+          },
+          "lots": {
+            "type": "integer",
+            "title": "Lots"
+          },
+          "lot_size": {
+            "type": "integer",
+            "title": "Lot Size"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "entry_greeks": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Greeks"
+          },
+          "sl_price": {
+            "type": "number",
+            "title": "Sl Price"
+          },
+          "target_price": {
+            "type": "number",
+            "title": "Target Price"
+          },
+          "trailing_sl_active": {
+            "type": "boolean",
+            "title": "Trailing Sl Active"
+          },
+          "trailing_sl_price": {
+            "type": "number",
+            "title": "Trailing Sl Price"
+          },
+          "peak_price": {
+            "type": "number",
+            "title": "Peak Price"
+          },
+          "current_ltp": {
+            "type": "number",
+            "title": "Current Ltp"
+          },
+          "unrealised_pnl": {
+            "type": "number",
+            "title": "Unrealised Pnl"
+          },
+          "unrealised_pnl_pct": {
+            "type": "number",
+            "title": "Unrealised Pnl Pct"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "strategy_name": {
+            "type": "string",
+            "title": "Strategy Name"
+          },
+          "exit_price": {
+            "type": "number",
+            "title": "Exit Price"
+          },
+          "exit_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Exit Time"
+          },
+          "exit_reason": {
+            "type": "string",
+            "title": "Exit Reason"
+          },
+          "realised_pnl": {
+            "type": "number",
+            "title": "Realised Pnl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_id",
+          "instrument",
+          "tradingsymbol",
+          "token",
+          "direction",
+          "strike",
+          "expiry",
+          "entry_price",
+          "entry_time",
+          "lots",
+          "lot_size",
+          "quantity",
+          "sl_price",
+          "target_price",
+          "trailing_sl_active",
+          "trailing_sl_price",
+          "peak_price",
+          "current_ltp",
+          "unrealised_pnl",
+          "unrealised_pnl_pct",
+          "status",
+          "strategy_name",
+          "exit_price",
+          "exit_time",
+          "exit_reason",
+          "realised_pnl"
+        ],
+        "title": "ClosedPosition"
+      },
+      "DailyPnL": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "trade_count": {
+            "type": "integer",
+            "title": "Trade Count"
+          },
+          "win_count": {
+            "type": "integer",
+            "title": "Win Count"
+          },
+          "gross_profit": {
+            "type": "number",
+            "title": "Gross Profit"
+          },
+          "gross_loss": {
+            "type": "number",
+            "title": "Gross Loss"
+          },
+          "net_pnl": {
+            "type": "number",
+            "title": "Net Pnl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "trade_count",
+          "win_count",
+          "gross_profit",
+          "gross_loss",
+          "net_pnl"
+        ],
+        "title": "DailyPnL"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "OptionChain": {
+        "properties": {
+          "instrument": {
+            "type": "string",
+            "title": "Instrument"
+          },
+          "expiry": {
+            "type": "string",
+            "title": "Expiry"
+          },
+          "spot": {
+            "type": "number",
+            "title": "Spot"
+          },
+          "atm_strike": {
+            "type": "integer",
+            "title": "Atm Strike"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "pcr_oi": {
+            "type": "number",
+            "title": "Pcr Oi"
+          },
+          "pcr_volume": {
+            "type": "number",
+            "title": "Pcr Volume"
+          },
+          "total_call_oi": {
+            "type": "integer",
+            "title": "Total Call Oi"
+          },
+          "total_put_oi": {
+            "type": "integer",
+            "title": "Total Put Oi"
+          },
+          "iv_rank": {
+            "type": "number",
+            "title": "Iv Rank"
+          },
+          "iv_percentile": {
+            "type": "number",
+            "title": "Iv Percentile"
+          },
+          "strikes": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StrikeData"
+            },
+            "type": "object",
+            "title": "Strikes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instrument",
+          "expiry",
+          "spot",
+          "atm_strike",
+          "updated_at",
+          "pcr_oi",
+          "pcr_volume",
+          "total_call_oi",
+          "total_put_oi",
+          "iv_rank",
+          "iv_percentile",
+          "strikes"
+        ],
+        "title": "OptionChain"
+      },
+      "OptionData": {
+        "properties": {
+          "ltp": {
+            "type": "number",
+            "title": "Ltp"
+          },
+          "bid": {
+            "type": "number",
+            "title": "Bid"
+          },
+          "ask": {
+            "type": "number",
+            "title": "Ask"
+          },
+          "iv": {
+            "type": "number",
+            "title": "Iv"
+          },
+          "delta": {
+            "type": "number",
+            "title": "Delta"
+          },
+          "gamma": {
+            "type": "number",
+            "title": "Gamma"
+          },
+          "theta": {
+            "type": "number",
+            "title": "Theta"
+          },
+          "vega": {
+            "type": "number",
+            "title": "Vega"
+          },
+          "oi": {
+            "type": "integer",
+            "title": "Oi"
+          },
+          "oi_change": {
+            "type": "integer",
+            "title": "Oi Change"
+          },
+          "volume": {
+            "type": "integer",
+            "title": "Volume"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ltp",
+          "bid",
+          "ask",
+          "iv",
+          "delta",
+          "gamma",
+          "theta",
+          "vega",
+          "oi",
+          "oi_change",
+          "volume"
+        ],
+        "title": "OptionData"
+      },
+      "PerformanceStats": {
+        "properties": {
+          "win_rate": {
+            "type": "number",
+            "title": "Win Rate"
+          },
+          "profit_factor": {
+            "type": "number",
+            "title": "Profit Factor"
+          },
+          "avg_rr": {
+            "type": "number",
+            "title": "Avg Rr"
+          },
+          "sharpe": {
+            "type": "number",
+            "title": "Sharpe"
+          }
+        },
+        "type": "object",
+        "required": [
+          "win_rate",
+          "profit_factor",
+          "avg_rr",
+          "sharpe"
+        ],
+        "title": "PerformanceStats"
+      },
+      "Position": {
+        "properties": {
+          "position_id": {
+            "type": "string",
+            "title": "Position Id"
+          },
+          "instrument": {
+            "type": "string",
+            "title": "Instrument"
+          },
+          "tradingsymbol": {
+            "type": "string",
+            "title": "Tradingsymbol"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction"
+          },
+          "strike": {
+            "type": "integer",
+            "title": "Strike"
+          },
+          "expiry": {
+            "type": "string",
+            "title": "Expiry"
+          },
+          "entry_price": {
+            "type": "number",
+            "title": "Entry Price"
+          },
+          "entry_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Entry Time"
+          },
+          "lots": {
+            "type": "integer",
+            "title": "Lots"
+          },
+          "lot_size": {
+            "type": "integer",
+            "title": "Lot Size"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "entry_greeks": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Greeks"
+          },
+          "sl_price": {
+            "type": "number",
+            "title": "Sl Price"
+          },
+          "target_price": {
+            "type": "number",
+            "title": "Target Price"
+          },
+          "trailing_sl_active": {
+            "type": "boolean",
+            "title": "Trailing Sl Active"
+          },
+          "trailing_sl_price": {
+            "type": "number",
+            "title": "Trailing Sl Price"
+          },
+          "peak_price": {
+            "type": "number",
+            "title": "Peak Price"
+          },
+          "current_ltp": {
+            "type": "number",
+            "title": "Current Ltp"
+          },
+          "unrealised_pnl": {
+            "type": "number",
+            "title": "Unrealised Pnl"
+          },
+          "unrealised_pnl_pct": {
+            "type": "number",
+            "title": "Unrealised Pnl Pct"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "strategy_name": {
+            "type": "string",
+            "title": "Strategy Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_id",
+          "instrument",
+          "tradingsymbol",
+          "token",
+          "direction",
+          "strike",
+          "expiry",
+          "entry_price",
+          "entry_time",
+          "lots",
+          "lot_size",
+          "quantity",
+          "sl_price",
+          "target_price",
+          "trailing_sl_active",
+          "trailing_sl_price",
+          "peak_price",
+          "current_ltp",
+          "unrealised_pnl",
+          "unrealised_pnl_pct",
+          "status",
+          "strategy_name"
+        ],
+        "title": "Position"
+      },
+      "RiskConfig": {
+        "properties": {
+          "daily_hard_limit": {
+            "type": "number",
+            "title": "Daily Hard Limit"
+          },
+          "daily_soft_limit": {
+            "type": "number",
+            "title": "Daily Soft Limit"
+          },
+          "per_trade_risk": {
+            "type": "number",
+            "title": "Per Trade Risk"
+          },
+          "max_open_positions": {
+            "type": "integer",
+            "title": "Max Open Positions"
+          },
+          "max_same_instrument": {
+            "type": "integer",
+            "title": "Max Same Instrument"
+          },
+          "max_lots_per_trade": {
+            "type": "integer",
+            "title": "Max Lots Per Trade"
+          },
+          "max_capital_pct": {
+            "type": "number",
+            "title": "Max Capital Pct"
+          },
+          "iv_rank_buy_threshold": {
+            "type": "number",
+            "title": "Iv Rank Buy Threshold"
+          },
+          "min_delta": {
+            "type": "number",
+            "title": "Min Delta"
+          },
+          "max_delta": {
+            "type": "number",
+            "title": "Max Delta"
+          },
+          "max_theta_daily_pct": {
+            "type": "number",
+            "title": "Max Theta Daily Pct"
+          },
+          "min_strike_volume": {
+            "type": "integer",
+            "title": "Min Strike Volume"
+          },
+          "min_strike_oi": {
+            "type": "integer",
+            "title": "Min Strike Oi"
+          },
+          "max_bid_ask_spread_pct": {
+            "type": "number",
+            "title": "Max Bid Ask Spread Pct"
+          },
+          "no_trade_after": {
+            "type": "string",
+            "title": "No Trade After"
+          },
+          "no_0dte_after": {
+            "type": "string",
+            "title": "No 0Dte After"
+          }
+        },
+        "type": "object",
+        "required": [
+          "daily_hard_limit",
+          "daily_soft_limit",
+          "per_trade_risk",
+          "max_open_positions",
+          "max_same_instrument",
+          "max_lots_per_trade",
+          "max_capital_pct",
+          "iv_rank_buy_threshold",
+          "min_delta",
+          "max_delta",
+          "max_theta_daily_pct",
+          "min_strike_volume",
+          "min_strike_oi",
+          "max_bid_ask_spread_pct",
+          "no_trade_after",
+          "no_0dte_after"
+        ],
+        "title": "RiskConfig"
+      },
+      "StrategyConfig": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "instruments": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Instruments"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "enabled",
+          "instruments",
+          "params"
+        ],
+        "title": "StrategyConfig"
+      },
+      "StrikeData": {
+        "properties": {
+          "CE": {
+            "$ref": "#/components/schemas/OptionData"
+          },
+          "PE": {
+            "$ref": "#/components/schemas/OptionData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "CE",
+          "PE"
+        ],
+        "title": "StrikeData"
+      },
+      "Trade": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "instrument": {
+            "type": "string",
+            "title": "Instrument"
+          },
+          "tradingsymbol": {
+            "type": "string",
+            "title": "Tradingsymbol"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction"
+          },
+          "strike": {
+            "type": "integer",
+            "title": "Strike"
+          },
+          "expiry": {
+            "type": "string",
+            "title": "Expiry"
+          },
+          "lots": {
+            "type": "integer",
+            "title": "Lots"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "entry_price": {
+            "type": "number",
+            "title": "Entry Price"
+          },
+          "entry_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Entry Time"
+          },
+          "exit_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Price"
+          },
+          "exit_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Time"
+          },
+          "exit_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Reason"
+          },
+          "realised_pnl": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realised Pnl"
+          },
+          "entry_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Delta"
+          },
+          "entry_iv": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Iv"
+          },
+          "entry_iv_rank": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Iv Rank"
+          },
+          "strategy_name": {
+            "type": "string",
+            "title": "Strategy Name"
+          },
+          "order_id_entry": {
+            "type": "string",
+            "title": "Order Id Entry"
+          },
+          "order_id_exit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Id Exit"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "instrument",
+          "tradingsymbol",
+          "direction",
+          "strike",
+          "expiry",
+          "lots",
+          "quantity",
+          "entry_price",
+          "entry_time",
+          "exit_price",
+          "exit_time",
+          "exit_reason",
+          "realised_pnl",
+          "entry_delta",
+          "entry_iv",
+          "entry_iv_rank",
+          "strategy_name",
+          "order_id_entry",
+          "order_id_exit",
+          "status"
+        ],
+        "title": "Trade"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

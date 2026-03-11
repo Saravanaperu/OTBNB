@@ -1,0 +1,9 @@
+{
+  "name": "options-buying-bot",
+  "version": "1.0.0",
+  "description": "Options Buying Bot Documentation Scripts",
+  "scripts": {
+    "swagger": "PYTHONPATH=. python generate_openapi.py",
+    "docs:serve": "npx serve -s docs -l 4000"
+  }
+}
