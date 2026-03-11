@@ -5,13 +5,13 @@
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
 | QA-003 | Pending | Medium | Increase test coverage for frontend (currently only `App.test.tsx` exists). | QA Engineer | None |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
-| DEV-012 | Pending | High | Integrate refresh_session logic into the bot lifecycle (e.g., scheduled token refresh). | Developer | INT-005 |
 | QA-006 | Pending | High | Increase backend test coverage for `bot_engine.py` and `execution_engine.py` modules. | QA Engineer | None |
 
 # Archive
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| DEV-012 | Done (2026-03-12) | High | Integrate refresh_session logic into the bot lifecycle (e.g., scheduled token refresh). | Developer | INT-005 |
 | ARCH-011 | Done (2026-03-12) | Medium | Implement automated error recovery and notification for backend exceptions. | Architect | ARCH-010 |
 
 | ID | Status | Priority | Description | Assignee | Dependencies |

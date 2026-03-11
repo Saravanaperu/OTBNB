@@ -10,6 +10,7 @@ from backend.bot.execution_engine import ExecutionEngine
 from backend.bot.risk_manager import RiskManager
 from backend.strategies.signal_aggregator import SignalAggregator
 from backend.bot.models import Position
+from backend.bot.session_manager import SessionManager
 
 logger = structlog.get_logger()
 
@@ -29,6 +30,7 @@ class BotEngine:
         execution_engine: ExecutionEngine,
         risk_manager: RiskManager,
         aggregators: Dict[str, SignalAggregator],
+        session_manager: SessionManager = None,
         email_service=None,
     ):
         self.feed_manager = feed_manager
@@ -38,6 +40,7 @@ class BotEngine:
         self.execution_engine = execution_engine
         self.risk_manager = risk_manager
         self.aggregators = aggregators
+        self.session_manager = session_manager
         self.email_service = email_service
         self._running = False
         self._tasks: List[asyncio.Task] = []
@@ -53,6 +56,28 @@ class BotEngine:
         for instrument, aggregator in self.aggregators.items():
             task = asyncio.create_task(self.process_instrument(instrument, aggregator))
             self._tasks.append(task)
+
+        if self.session_manager:
+            refresh_task = asyncio.create_task(self._token_refresh_loop())
+            self._tasks.append(refresh_task)
+
+    async def _token_refresh_loop(self):
+        """Periodically refreshes the AngelOne session token."""
+        # Refresh token every hour (3600 seconds)
+        refresh_interval = 3600
+        while self._running:
+            await asyncio.sleep(refresh_interval)
+            if not self._running:
+                break
+
+            try:
+                logger.info("Triggering scheduled session token refresh.")
+                await asyncio.to_thread(self.session_manager.refresh_session)
+            except Exception as e:
+                logger.error("Error during scheduled session refresh", error=str(e), exc_info=True)
+                if self.email_service:
+                    error_msg = f"BotEngine session refresh error: {str(e)}"
+                    asyncio.create_task(self.email_service.send_error_alert(error_msg))
 
     async def stop(self):
         """Stops the bot engine tasks."""
