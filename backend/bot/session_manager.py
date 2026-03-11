@@ -1,3 +1,4 @@
+import time
 import pyotp
 from SmartApi import SmartConnect
 from backend.config.settings import settings
@@ -25,27 +26,91 @@ class SessionManager:
         """Authenticates with AngelOne and retrieves tokens."""
         logger.info("Attempting login to AngelOne...", client_code=self.client_code)
 
-        try:
-            # Generate TOTP
-            totp = pyotp.TOTP(self.totp_secret).now()
+        max_retries = 3
+        base_delay = 1.0
 
-            # Authenticate
-            data = self.api.generateSession(self.client_code, self.password, totp)
+        for attempt in range(max_retries):
+            try:
+                # Generate TOTP
+                totp = pyotp.TOTP(self.totp_secret).now()
 
-            if data.get("status") is False:
-                logger.error("Login failed", message=data["message"])
-                raise Exception(f"Login failed: {data['message']}")
+                # Authenticate
+                data = self.api.generateSession(self.client_code, self.password, totp)
 
-            self.jwt_token = data["data"]["jwtToken"]
-            self.refresh_token = data["data"]["refreshToken"]
-            self.feed_token = self.api.getfeedToken()
+                if data.get("status") is False:
+                    logger.error(
+                        "Login failed", message=data["message"], attempt=attempt + 1
+                    )
+                    raise Exception(f"Login failed: {data['message']}")
 
-            self.is_connected = True
-            logger.info("Successfully logged in to AngelOne.")
+                self.jwt_token = data["data"]["jwtToken"]
+                self.refresh_token = data["data"]["refreshToken"]
+                self.feed_token = self.api.getfeedToken()
 
-        except Exception as e:
-            logger.exception("Exception occurred during login", error=str(e))
+                self.is_connected = True
+                logger.info("Successfully logged in to AngelOne.")
+                return
+
+            except Exception as e:
+                logger.error(
+                    "Exception occurred during login", error=str(e), attempt=attempt + 1
+                )
+
+            if attempt < max_retries - 1:
+                time.sleep(base_delay * (2**attempt))
+
+        logger.error("Failed to login to AngelOne after all retries.")
+        self.is_connected = False
+
+    def refresh_session(self):
+        """Refreshes the AngelOne session using the refresh token."""
+        if not self.refresh_token:
+            logger.error("No refresh token available. Cannot refresh session.")
             self.is_connected = False
+            return False
+
+        logger.info("Attempting to refresh AngelOne session...")
+
+        max_retries = 3
+        base_delay = 1.0
+
+        for attempt in range(max_retries):
+            try:
+                data = self.api.generateToken(self.refresh_token)
+
+                if data.get("status") is False:
+                    logger.error(
+                        "Session refresh failed",
+                        message=data.get("message"),
+                        attempt=attempt + 1,
+                    )
+                    raise Exception(f"Session refresh failed: {data.get('message')}")
+
+                self.jwt_token = data["data"]["jwtToken"]
+                self.refresh_token = data["data"]["refreshToken"]
+                self.feed_token = data["data"]["feedToken"]
+
+                # generateToken also updates the self.api internally using setAccessToken and setFeedToken
+
+                self.is_connected = True
+                logger.info("Successfully refreshed AngelOne session.")
+                return True
+
+            except Exception as e:
+                logger.error(
+                    "Exception occurred during session refresh",
+                    error=str(e),
+                    attempt=attempt + 1,
+                )
+
+            if attempt < max_retries - 1:
+                time.sleep(base_delay * (2**attempt))
+
+        logger.error(
+            "Failed to refresh AngelOne session after all retries. Marking as disconnected."
+        )
+        self.is_connected = False
+        return False
 
     def logout(self):
         """Logs out from AngelOne."""

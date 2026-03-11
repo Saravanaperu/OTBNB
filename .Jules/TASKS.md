@@ -5,11 +5,13 @@
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
 | QA-003 | Pending | Medium | Increase test coverage for frontend (currently only `App.test.tsx` exists). | QA Engineer | None |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
+| DEV-012 | Pending | High | Integrate refresh_session logic into the bot lifecycle (e.g., scheduled token refresh). | Developer | INT-005 |
 
 # Archive
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| INT-005 | Done (2024-05-18) | High | Implement automatic token refresh and retry logic for SmartAPI SessionManager. | Integrator | None |
 | DOC-002 | Done (2026-03-11) | High | Generate OpenAPI specification and setup Swagger UI. | Tech Writer | None |
 | QA-004 | Done (2026-03-11) | High | Increase test coverage for backend core components. | QA Engineer | None |
 | OPS-003 | Done (2025-03-11) | Medium | Create runbooks for common operational tasks (Makefile) and database disaster recovery scripts. | Ops | None |
