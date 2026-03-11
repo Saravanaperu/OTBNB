@@ -18,6 +18,7 @@
 | DEV-010 | Done (2025-03-05) | High | Integrate `ExecutionEngine` into main application logic and endpoints. | Developer | INT-003 |
 | OPS-002 | Done (2026-03-10) | High | Enhance CI/CD pipeline with black, flake8, mypy, and test coverage | Ops | None |
 | UI-008 | Done (2026-03-10) | Low | Add ARIA labels to buttons for accessibility. | UIMaster | None |
+| INT-004 | Done (2026-03-11) | High | Implement WebSocket dynamic token subscription in FeedManager | Integrator | None |
 | INT-003 | Done (2026-03-10) | High | Implement ExecutionEngine for AngelOne SmartAPI integration | Integrator | None |
 | OPS-001 | Done (2026-03-10) | Medium | Containerize the application (Dockerfiles and docker-compose). | Ops | None |
 | ARCH-009 | Done (2026-03-10) | High | Set up centralized logging configuration with structlog. | Architect | None |

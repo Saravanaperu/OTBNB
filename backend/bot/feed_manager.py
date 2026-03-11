@@ -91,9 +91,42 @@ class FeedManager:
             logger.warning("WebSocket not connected, cannot subscribe")
             return
 
-        # Example token lists, replace with actual implementation fetching from registry later
-        # We subscribe after connection is established
-        # In a real setup we construct the list of tokens from the registry.
+        nse_tokens = []
+        nfo_tokens = []
+
+        for inst in registry.master_data:
+            token = inst.get("token")
+            exch = inst.get("exch_seg")
+            if not token or not exch:
+                continue
+
+            if exch == "NSE":
+                nse_tokens.append(token)
+            elif exch == "NFO":
+                nfo_tokens.append(token)
+
+        token_list = []
+        if nse_tokens:
+            token_list.append({"exchangeType": 1, "tokens": nse_tokens})  # 1 = NSE_CM
+        if nfo_tokens:
+            token_list.append({"exchangeType": 2, "tokens": nfo_tokens})  # 2 = NSE_FO
+
+        if token_list:
+            try:
+                self.sws.subscribe(
+                    correlation_id="init_sub",
+                    mode=SmartWebSocketV2.SNAP_QUOTE,
+                    token_list=token_list,
+                )
+                logger.info(
+                    "Successfully subscribed to tokens.",
+                    nse_count=len(nse_tokens),
+                    nfo_count=len(nfo_tokens),
+                )
+            except Exception as e:
+                logger.error("Failed to subscribe to tokens", error=str(e))
+        else:
+            logger.warning("No tokens found to subscribe.")
 
     def get_queue(self, instrument: str) -> asyncio.Queue:
         return self.queues.get(instrument, asyncio.Queue())
