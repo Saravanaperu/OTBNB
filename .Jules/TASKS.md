@@ -4,13 +4,13 @@
 |---|---|---|---|---|---|
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
 | QA-003 | Pending | Medium | Increase test coverage for frontend (currently only `App.test.tsx` exists). | QA Engineer | None |
-| QA-004 | Pending | High | Increase test coverage for backend core components. | QA Engineer | None |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
 
 # Archive
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| QA-004 | Done (2026-03-11) | High | Increase test coverage for backend core components. | QA Engineer | None |
 | OPS-003 | Done (2025-03-11) | Medium | Create runbooks for common operational tasks (Makefile) and database disaster recovery scripts. | Ops | None |
 | UI-009 | Done (2026-03-11) | Medium | Replace placeholder Positions page with a dedicated component. | UIMaster | None |
 | DEV-011 | Done (2026-03-11) | High | Implement real trade stats in `/api/v1/trades/stats`. | Developer | None |
