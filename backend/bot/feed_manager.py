@@ -94,7 +94,7 @@ class FeedManager:
         nse_tokens = []
         nfo_tokens = []
 
-        for inst in self.registry.master_data:
+        for inst in registry.master_data:
             token = inst.get("token")
             exch = inst.get("exch_seg")
             if not token or not exch:
