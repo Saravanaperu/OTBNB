@@ -1,6 +1,6 @@
 import asyncio
 import structlog
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from backend.bot.feed_manager import FeedManager
 from backend.bot.option_chain_manager import OptionChainManager
@@ -30,7 +30,7 @@ class BotEngine:
         execution_engine: ExecutionEngine,
         risk_manager: RiskManager,
         aggregators: Dict[str, SignalAggregator],
-        session_manager: SessionManager = None,
+        session_manager: Optional[SessionManager] = None,
         email_service=None,
     ):
         self.feed_manager = feed_manager
@@ -63,8 +63,11 @@ class BotEngine:
 
     async def _token_refresh_loop(self):
         """Periodically refreshes the AngelOne session token."""
-        # Refresh token every hour (3600 seconds)
-        refresh_interval = 3600
+        if not self.session_manager:
+            return
+
+        # Refresh token every 50 minutes (3000 seconds) to ensure it does not expire
+        refresh_interval = 3000
         while self._running:
             await asyncio.sleep(refresh_interval)
             if not self._running:
@@ -74,7 +77,11 @@ class BotEngine:
                 logger.info("Triggering scheduled session token refresh.")
                 await asyncio.to_thread(self.session_manager.refresh_session)
             except Exception as e:
-                logger.error("Error during scheduled session refresh", error=str(e), exc_info=True)
+                logger.error(
+                    "Error during scheduled session refresh",
+                    error=str(e),
+                    exc_info=True,
+                )
                 if self.email_service:
                     error_msg = f"BotEngine session refresh error: {str(e)}"
                     asyncio.create_task(self.email_service.send_error_alert(error_msg))
