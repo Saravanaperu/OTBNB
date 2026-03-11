@@ -11,6 +11,7 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| DEV-011 | Done (2026-03-11) | High | Implement real trade stats in `/api/v1/trades/stats`. | Developer | None |
 | QA-005 | Done (2026-03-10) | Medium | Fix unhandled WebSocket error in frontend tests (`App.test.tsx`). | Developer | None |
 | ARCH-010 | Done (2026-03-10) | High | Refactor global bot state access and implement global exception handler. | Architect | None |
 | DEV-010 | Done (2025-03-05) | High | Integrate `ExecutionEngine` into main application logic and endpoints. | Developer | INT-003 |
