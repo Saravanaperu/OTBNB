@@ -9,9 +9,7 @@ import { HomeDashboard } from './pages/HomeDashboard';
 import { TradeHistory } from './pages/TradeHistory';
 import { Configuration } from './pages/Configuration';
 import { OptionChain } from './pages/OptionChain';
-
-// Placeholder Pages
-const Positions = () => <div className="p-6 h-full w-full">Positions Content</div>;
+import { Positions } from './pages/Positions';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const queryClient = new QueryClient();
