@@ -6,6 +6,8 @@
 | QA-003 | Pending | Medium | Increase test coverage for frontend (currently only `App.test.tsx` exists). | QA Engineer | None |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
 | DEV-012 | Pending | High | Integrate refresh_session logic into the bot lifecycle (e.g., scheduled token refresh). | Developer | INT-005 |
+| QA-006 | Pending | High | Increase backend test coverage for `bot_engine.py` and `execution_engine.py` modules. | QA Engineer | None |
+| DEV-013 | Pending | Medium | Implement automated error recovery and notification for backend exceptions. | Developer | ARCH-010 |
 
 # Archive
 
@@ -26,9 +28,6 @@
 | INT-003 | Done (2026-03-10) | High | Implement ExecutionEngine for AngelOne SmartAPI integration | Integrator | None |
 | OPS-001 | Done (2026-03-10) | Medium | Containerize the application (Dockerfiles and docker-compose). | Ops | None |
 | ARCH-009 | Done (2026-03-10) | High | Set up centralized logging configuration with structlog. | Architect | None |
-
-| ID | Status | Priority | Description | Assignee | Dependencies |
-|---|---|---|---|---|---|
 | DEV-001 | Completed | Medium | Build the Base Strategy class (`backend/strategies/base_strategy.py`). | Architect | ARCH-004, ARCH-007 |
 | DEV-002 | Completed | Medium | Implement Momentum Breakout Strategy (`backend/strategies/momentum_breakout.py`). | Developer | DEV-001 |
 | DEV-003 | Completed | Medium | Implement OI Buildup Strategy (`backend/strategies/oi_buildup.py`). | Developer | DEV-001 |
