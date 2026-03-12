@@ -5,12 +5,12 @@
 | QA-002 | Pending | High | Run bot with simulated ticks to verify system stability and order logic without money. | QA Engineer | QA-001, DEV-005 |
 | QA-003 | Pending | Medium | Increase test coverage for frontend (currently only `App.test.tsx` exists). | QA Engineer | None |
 | DOC-001 | Pending | Low | Document final setup instructions. | Tech Writer | QA-002 |
-| QA-006 | Pending | High | Increase backend test coverage for `bot_engine.py` and `execution_engine.py` modules. | QA Engineer | None |
 
 # Archive
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| QA-006 | Done (2025-03-12) | High | Increase backend test coverage for `bot_engine.py` and `execution_engine.py` modules. | QA Engineer | None |
 | INT-006 | Done (2026-03-12) | High | Optimize WebSocket reconnection logic to handle network drops. | Integrator | None |
 | UI-010 | Done (2026-03-12) | Medium | Implement Toast notifications and Skeleton loaders | UIMaster | None |
 
