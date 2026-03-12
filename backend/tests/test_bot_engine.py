@@ -147,7 +147,7 @@ async def test_bot_engine_token_refresh_call(mock_dependencies):
         nonlocal calls
         calls += 1
         if calls > 0:
-            pass # allow it to proceed to to_thread then next iteration will stop it
+            pass  # allow it to proceed to to_thread then next iteration will stop it
 
     # We need to manually stop the loop after one execution of the body, which
     # happens after the try block, so we will use another side effect if needed,
@@ -255,10 +255,8 @@ async def test_token_refresh_exception(mock_dependencies):
     engine = BotEngine(**deps)
     engine._running = True
 
-    calls = 0
-
     async def mock_sleep(interval):
-        pass # allow it to proceed to to_thread
+        pass  # allow it to proceed to to_thread
 
     def mock_to_thread(*args, **kwargs):
         engine._running = False
