@@ -11,6 +11,10 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| UI-010 | Done (2026-03-12) | Medium | Implement Toast notifications and Skeleton loaders | UIMaster | None |
+
+| ID | Status | Priority | Description | Assignee | Dependencies |
+|---|---|---|---|---|---|
 | DEV-012 | Done (2026-03-12) | High | Integrate refresh_session logic into the bot lifecycle (e.g., scheduled token refresh). | Developer | INT-005 |
 | ARCH-011 | Done (2026-03-12) | Medium | Implement automated error recovery and notification for backend exceptions. | Architect | ARCH-010 |
 
