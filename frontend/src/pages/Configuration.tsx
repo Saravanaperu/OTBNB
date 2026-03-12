@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { RiskConfig } from '../types';
 import { useGetRiskConfig, useGetStrategies, useUpdateRiskConfig } from '../hooks/useBotAPI';
+import { useToastStore } from '../store/toastStore';
+import { Skeleton } from '../components/ui/Skeleton';
 
 export function Configuration() {
   const { data: riskData, isLoading: isLoadingRisk } = useGetRiskConfig();
   const { data: strategiesData, isLoading: isLoadingStrats } = useGetStrategies();
   const updateRiskMutation = useUpdateRiskConfig();
+  const { addToast } = useToastStore();
 
   const [riskConfig, setRiskConfig] = useState<RiskConfig | null>(null);
 
@@ -20,7 +23,10 @@ export function Configuration() {
     if (riskConfig) {
       updateRiskMutation.mutate(riskConfig, {
         onSuccess: () => {
-          alert("Configuration saved successfully!");
+          addToast("Configuration saved successfully!", "success");
+        },
+        onError: () => {
+          addToast("Failed to save configuration.", "error");
         }
       });
     }
@@ -35,7 +41,38 @@ export function Configuration() {
   };
 
   if (isLoadingRisk || isLoadingStrats || !riskConfig || !strategiesData) {
-    return <div className="p-6">Loading configuration...</div>;
+    return (
+      <div className="p-6 h-full w-full flex flex-col gap-6 overflow-y-auto">
+        <div>
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
+          <div className="card p-6 flex flex-col gap-4">
+            <Skeleton className="h-6 w-48 mb-4" />
+            <div className="grid grid-cols-2 gap-4">
+               <Skeleton className="h-16 w-full" />
+               <Skeleton className="h-16 w-full" />
+               <Skeleton className="h-16 w-full" />
+               <Skeleton className="h-16 w-full" />
+            </div>
+            <Skeleton className="h-6 w-48 mt-4 mb-4" />
+            <div className="grid grid-cols-2 gap-4">
+               <Skeleton className="h-16 w-full" />
+               <Skeleton className="h-16 w-full" />
+               <Skeleton className="h-16 w-full" />
+               <Skeleton className="h-16 w-full" />
+            </div>
+          </div>
+          <div className="card p-6 flex flex-col gap-4">
+             <Skeleton className="h-6 w-48 mb-4" />
+             <Skeleton className="h-20 w-full" />
+             <Skeleton className="h-20 w-full" />
+             <Skeleton className="h-20 w-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

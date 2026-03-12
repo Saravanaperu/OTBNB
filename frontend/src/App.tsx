@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { SideNav } from './components/layout/SideNav';
 import { TopBar } from './components/layout/TopBar';
 import { SignalTicker } from './components/layout/SignalTicker';
+import { ToastContainer } from './components/ui/Toast';
 import { useWebSocket } from './hooks/useWebSocket';
 
 // Pages
@@ -23,6 +24,7 @@ function App() {
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="flex h-screen bg-background text-slate-100 overflow-hidden font-sans antialiased selection:bg-primary/30">
           <SideNav />
+          <ToastContainer />
           <div className="flex-1 flex flex-col h-full min-w-0">
             <TopBar />
             <SignalTicker />
