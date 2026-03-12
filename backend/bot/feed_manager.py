@@ -70,6 +70,10 @@ class FeedManager:
             self.session_manager.api_key,
             self.session_manager.client_code,
             self.session_manager.feed_token,
+            max_retry_attempt=5,
+            retry_strategy=1,
+            retry_delay=10,
+            retry_multiplier=2,
         )
 
         # We start the connection in a separate thread so it doesn't block asyncio
