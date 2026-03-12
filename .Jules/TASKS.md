@@ -11,6 +11,7 @@
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
 |---|---|---|---|---|---|
+| INT-006 | Done (2026-03-12) | High | Optimize WebSocket reconnection logic to handle network drops. | Integrator | None |
 | UI-010 | Done (2026-03-12) | Medium | Implement Toast notifications and Skeleton loaders | UIMaster | None |
 
 | ID | Status | Priority | Description | Assignee | Dependencies |
